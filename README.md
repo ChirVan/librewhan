@@ -16,7 +16,7 @@ Kalibrewhan is a point-of-sale (POS) and basic inventory tracking system focused
 
 ### Core Features (current)
 * Order entry UI with cart, size pricing, customizations
-* Payment mode selection (Cash / GCash / Card) and change computation
+* Payment mode selection (Cash / GCash / Maya) and change computation
 * Foundational schema (products, sizes, customizations, orders, inventory, activity logs)
 * Authentication (Laravel starter auth scaffolding)
 
