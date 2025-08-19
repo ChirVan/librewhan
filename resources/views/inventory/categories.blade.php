@@ -29,6 +29,71 @@
             </ul>
         </div>
 
+        
+        <!-- Category Statistics -->
+        <div class="row mb-4" id="category-stats-row">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card card-stats card-round h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-primary bubble-shadow-small">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                        </div>
+                        <div class="ms-3">
+                            <p class="card-category mb-0 small text-uppercase">Total Categories</p>
+                            <h4 class="card-title mb-0" id="total-categories">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card card-stats card-round h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-success bubble-shadow-small">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="ms-3">
+                            <p class="card-category mb-0 small text-uppercase">Active</p>
+                            <h4 class="card-title mb-0" id="active-categories">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card card-stats card-round h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-warning bubble-shadow-small">
+                                <i class="fas fa-box"></i>
+                            </div>
+                        </div>
+                        <div class="ms-3">
+                            <p class="card-category mb-0 small text-uppercase">Products</p>
+                            <h4 class="card-title mb-0" id="total-products">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card card-stats card-round h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-info bubble-shadow-small">
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                        <div class="ms-3">
+                            <p class="card-category mb-0 small text-uppercase">Top Category</p>
+                            <h4 class="card-title mb-0" id="popular-category">—</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filters and Actions -->
         <div class="row mb-3">
             <div class="col-md-12">
@@ -129,6 +194,7 @@
     </div>
 </div>
 
+
 <!-- Add/Edit Category Modal -->
 <div class="modal fade" id="categoryModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -163,15 +229,13 @@
                             <div class="form-group">
                                 <label class="form-label">Icon</label>
                                 <select class="form-control" id="categoryIcon" name="icon">
-                                    <option value="fas fa-coffee">☕ Coffee</option>
-                                    <option value="fas fa-cookie-bite">🍪 Pastry</option>
-                                    <option value="fas fa-hamburger">🍔 Food</option>
-                                    <option value="fas fa-glass-water">🥤 Beverage</option>
-                                    <option value="fas fa-utensils">🍽️ Utensils</option>
-                                    <option value="fas fa-birthday-cake">🎂 Dessert</option>
-                                    <option value="fas fa-seedling">🌱 Healthy</option>
-                                    <option value="fas fa-fire">🔥 Spicy</option>
+                                    <option value="fas fa-coffee" selected>☕ Coffee</option>
+                                    <option value="fas fa-leaf">🍃 Fruit Tea</option>
+                                    <option value="fas fa-blender">🧊 Frappe</option>
+                                    <option value="fas fa-glass-whiskey">🧋 Milk Tea</option>
+                                    <option value="fas fa-utensils">🍽️ Snacks</option>
                                 </select>
+                                <small class="form-text text-muted">Choose one of the allowed category icons.</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -448,566 +512,339 @@
     font-size: 0.8rem;
     color: #6c757d;
 }
+.icon-emoji {
+    font-size: 28px;
+    line-height: 1;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Sample categories data - replace with actual API calls
-    let allCategories = [
-        {
-            id: 1,
-            name: 'Coffee',
-            slug: 'coffee',
-            description: 'Premium coffee beverages including espresso, cappuccino, and specialty drinks',
-            icon: 'fas fa-coffee',
-            color: '#8B4513',
-            status: 'active',
-            display_order: 1,
-            featured: true,
-            products_count: 12,
-            created_at: '2024-01-01 00:00:00',
-            products: [
-                { id: 1, name: 'Espresso', price: 3.50, stock: 45 },
-                { id: 2, name: 'Cappuccino', price: 4.25, stock: 32 },
-                { id: 3, name: 'Latte', price: 4.75, stock: 28 }
-            ]
-        },
-        {
-            id: 2,
-            name: 'Pastry',
-            slug: 'pastry',
-            description: 'Fresh baked pastries, croissants, muffins, and sweet treats',
-            icon: 'fas fa-cookie-bite',
-            color: '#ffc107',
-            status: 'active',
-            display_order: 2,
-            featured: true,
-            products_count: 8,
-            created_at: '2024-01-01 00:00:00',
-            products: [
-                { id: 5, name: 'Croissant', price: 2.95, stock: 15 },
-                { id: 6, name: 'Blueberry Muffin', price: 3.45, stock: 22 }
-            ]
-        },
-        {
-            id: 3,
-            name: 'Food',
-            slug: 'food',
-            description: 'Hearty meals, sandwiches, salads, and main dishes',
-            icon: 'fas fa-hamburger',
-            color: '#28a745',
-            status: 'active',
-            display_order: 3,
-            featured: false,
-            products_count: 6,
-            created_at: '2024-01-01 00:00:00',
-            products: [
-                { id: 7, name: 'Caesar Salad', price: 8.95, stock: 12 },
-                { id: 8, name: 'Club Sandwich', price: 9.75, stock: 0 }
-            ]
-        },
-        {
-            id: 4,
-            name: 'Beverage',
-            slug: 'beverage',
-            description: 'Non-coffee drinks including teas, juices, and cold beverages',
-            icon: 'fas fa-glass-water',
-            color: '#17a2b8',
-            status: 'active',
-            display_order: 4,
-            featured: false,
-            products_count: 4,
-            created_at: '2024-01-01 00:00:00',
-            products: [
-                { id: 9, name: 'Green Tea', price: 2.75, stock: 35 },
-                { id: 10, name: 'Orange Juice', price: 3.25, stock: 18 }
-            ]
-        }
-    ];
 
-    let filteredCategories = [...allCategories];
+    let allCategories = [];
+    let filteredCategories = [];
     let editingCategoryId = null;
-    let currentView = 'grid'; // 'grid' or 'table'
+    let currentView = 'grid';
 
-    // Initialize page
-    loadCategories();
-    updateStatistics();
+    const iconEmoji = {
+        'fas fa-coffee':'☕',
+        'fas fa-leaf':'🍃',
+        'fas fa-blender':'🧊',
+        'fas fa-glass-whiskey':'🧋',
+        'fas fa-utensils':'🍽️',
+        'fas fa-mug-hot':'🧋', // legacy
+        'fas fa-ice-cream':'🧊', // legacy
+        'fas fa-cookie-bite':'🍽️' // legacy snacks
+    };
+
+    loadFromServer();
     setupEventListeners();
 
+    function loadFromServer() {
+        const params = new URLSearchParams({
+            search: document.getElementById('searchInput').value,
+            status: document.getElementById('statusFilter').value,
+            sort: document.getElementById('sortFilter').value
+        });
+    fetch("{{ route('inventory.categories.data') }}?"+params.toString(), {
+            headers: { 'Accept':'application/json' }
+        })
+        .then(r=>r.json())
+        .then(json=>{
+            allCategories = json.data;
+            filteredCategories = [...allCategories];
+            loadCategories();
+            updateStatistics();
+        })
+        .catch(()=> alert('Failed to load categories'));
+    }
+
     function setupEventListeners() {
-        // Search and filters
-        document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 300));
-        document.getElementById('statusFilter').addEventListener('change', applyFilters);
-        document.getElementById('sortFilter').addEventListener('change', applyFilters);
+        document.getElementById('searchInput').addEventListener('input', debounce(()=>{loadFromServer();},300));
+        document.getElementById('statusFilter').addEventListener('change', loadFromServer);
+        document.getElementById('sortFilter').addEventListener('change', loadFromServer);
 
-        // View toggle
-        document.getElementById('gridViewBtn').addEventListener('click', () => switchView('grid'));
-        document.getElementById('tableViewBtn').addEventListener('click', () => switchView('table'));
-
-        // Action buttons
         document.getElementById('addCategoryBtn').addEventListener('click', showAddCategoryModal);
-        document.getElementById('exportBtn').addEventListener('click', exportCategories);
-        document.getElementById('refreshBtn').addEventListener('click', refreshCategories);
+    document.getElementById('exportBtn').addEventListener('click', ()=> window.location = "{{ route('inventory.categories.export') }}");
+        document.getElementById('refreshBtn').addEventListener('click', ()=> loadFromServer());
         document.getElementById('saveCategoryBtn').addEventListener('click', saveCategory);
-        document.getElementById('confirmDeleteBtn').addEventListener('click', deleteCategory);
-        document.getElementById('deactivateCategoryBtn').addEventListener('click', deactivateCategory);
 
-        // Category name to slug auto-generation
+        document.getElementById('gridViewBtn').addEventListener('click', ()=> switchView('grid'));
+        document.getElementById('tableViewBtn').addEventListener('click', ()=> switchView('table'));
+
         document.getElementById('categoryName').addEventListener('input', function() {
-            const slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
             document.getElementById('categorySlug').value = slug;
         });
+    // Icon preview removed per request; select remains functional
     }
 
-    function applyFilters() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
-        const sortFilter = document.getElementById('sortFilter').value;
-
-        // Filter categories
-        filteredCategories = allCategories.filter(category => {
-            const matchesSearch = category.name.toLowerCase().includes(searchTerm) ||
-                                category.description.toLowerCase().includes(searchTerm);
-            const matchesStatus = statusFilter === 'all' || category.status === statusFilter;
-
-            return matchesSearch && matchesStatus;
-        });
-
-        // Sort categories
-        sortCategories(sortFilter);
-
-        loadCategories();
-        updateStatistics();
-    }
-
-    function sortCategories(sortBy) {
-        switch(sortBy) {
-            case 'name':
-                filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-            case 'name-desc':
-                filteredCategories.sort((a, b) => b.name.localeCompare(a.name));
-                break;
-            case 'products':
-                filteredCategories.sort((a, b) => b.products_count - a.products_count);
-                break;
-            case 'created':
-                filteredCategories.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                break;
-            case 'created-desc':
-                filteredCategories.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                break;
-        }
-    }
-
-    function switchView(view) {
-        currentView = view;
-        
-        if (view === 'grid') {
-            document.getElementById('categoriesContainer').style.display = 'flex';
-            document.getElementById('categoriesTableContainer').style.display = 'none';
-            document.getElementById('gridViewBtn').classList.add('active');
-            document.getElementById('tableViewBtn').classList.remove('active');
+    function switchView(v){
+        currentView = v;
+        if (v==='grid') {
+            document.getElementById('categoriesContainer').style.display='flex';
+            document.getElementById('categoriesTableContainer').style.display='none';
         } else {
-            document.getElementById('categoriesContainer').style.display = 'none';
-            document.getElementById('categoriesTableContainer').style.display = 'block';
-            document.getElementById('gridViewBtn').classList.remove('active');
-            document.getElementById('tableViewBtn').classList.add('active');
+            document.getElementById('categoriesContainer').style.display='none';
+            document.getElementById('categoriesTableContainer').style.display='block';
         }
-        
         loadCategories();
     }
 
     function loadCategories() {
-        if (currentView === 'grid') {
-            loadCategoriesGrid();
-        } else {
-            loadCategoriesTable();
-        }
+        if (currentView==='grid') loadCategoriesGrid(); else loadCategoriesTable();
     }
 
     function loadCategoriesGrid() {
         const container = document.getElementById('categoriesContainer');
-        
-        if (filteredCategories.length === 0) {
-            container.innerHTML = `
-                <div class="col-12">
-                    <div class="text-center py-5">
-                        <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No categories found</h5>
-                        <p class="text-muted">No categories match your current filters.</p>
-                    </div>
-                </div>
-            `;
+        if (!allCategories.length) {
+            container.innerHTML = `<div class="col-12 text-center py-5 text-muted">No categories</div>`;
             return;
         }
-
-        container.innerHTML = filteredCategories.map(category => createCategoryCard(category)).join('');
+        container.innerHTML = allCategories.map(c=>createCategoryCard(c)).join('');
     }
 
     function loadCategoriesTable() {
         const tbody = document.getElementById('categoriesTableBody');
-        
-        if (filteredCategories.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-4">
-                        <i class="fas fa-layer-group fa-2x text-muted mb-2"></i>
-                        <br>
-                        <span class="text-muted">No categories found</span>
-                    </td>
-                </tr>
-            `;
+        if (!allCategories.length) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No categories</td></tr>`;
             return;
         }
-
-        tbody.innerHTML = filteredCategories.map(category => createCategoryRow(category)).join('');
+        tbody.innerHTML = allCategories.map(c=>createCategoryRow(c)).join('');
     }
 
-    function createCategoryCard(category) {
+    function updateStatistics() {
+    const tc = document.getElementById('total-categories');
+    if (tc) tc.textContent = allCategories.length;
+    const ac = document.getElementById('active-categories');
+    if (ac) ac.textContent = allCategories.filter(c=>c.status==='active').length;
+    const tp = document.getElementById('total-products');
+    if (tp) tp.textContent = allCategories.reduce((s,c)=>s + (c.products_count||0),0);
+    const popular = [...allCategories].sort((a,b)=>(b.products_count||0)-(a.products_count||0))[0];
+    const pc = document.getElementById('popular-category');
+    if (pc) pc.textContent = popular ? popular.name : 'N/A';
+    }
+
+    function showAddCategoryModal() {
+        editingCategoryId = null;
+        document.getElementById('categoryForm').reset();
+        document.getElementById('categoryModalTitle').textContent = 'Add New Category';
+        new bootstrap.Modal(document.getElementById('categoryModal')).show();
+    }
+
+    function saveCategory() {
+        const form = document.getElementById('categoryForm');
+        if (!form.reportValidity()) return;
+
+        const fd = new FormData(form);
+        const payload = Object.fromEntries(fd.entries());
+        payload.featured = fd.get('featured') ? 1 : 0;
+
+        const method = editingCategoryId ? 'PUT' : 'POST';
+        const url = editingCategoryId
+            ? "{{ url('/inventory/categories') }}/" + editingCategoryId
+            : "{{ route('inventory.categories.store') }}";
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Accept':'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type':'application/json'
+            },
+            body: JSON.stringify(payload)
+        }).then(r=>r.json())
+          .then(resp=>{
+            if (resp.success) {
+                loadFromServer();
+                bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
+                alert('Saved');
+            } else {
+                     if (resp.errors) {
+                         const messages = Object.values(resp.errors).flat().join('\n');
+                         alert(messages);
+                     } else {
+                         alert(resp.message || 'Error');
+                     }
+            }
+          }).catch(()=> alert('Save failed'));
+    }
+
+    window.editCategory = function(id) {
+        fetch("{{ url('/inventory/categories') }}/"+id, {headers:{'Accept':'application/json'}})
+            .then(r=>r.json())
+            .then(({category})=>{
+                editingCategoryId = category.id;
+                document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+                document.getElementById('categoryName').value = category.name;
+                document.getElementById('categorySlug').value = category.slug;
+                document.getElementById('categoryDescription').value = category.description ?? '';
+                // Fallback map for previously stored icons not in new list
+                const fallbackMap = {
+                    'fas fa-ice-cream':'fas fa-blender',
+                    'fas fa-mug-hot':'fas fa-glass-whiskey',
+                    'fas fa-cookie-bite':'fas fa-utensils',
+                    'fas fa-lemon':'fas fa-leaf'
+                };
+                const select = document.getElementById('categoryIcon');
+                const incoming = category.icon || 'fas fa-coffee';
+                const mapped = fallbackMap[incoming] || incoming;
+                // If mapped value not found in options, default to coffee
+                if (![...select.options].some(o=>o.value===mapped)) {
+                    select.value = 'fas fa-coffee';
+                } else {
+                    select.value = mapped;
+                }
+                // Icon preview removed
+                document.getElementById('categoryColor').value = category.color ?? '#8B4513';
+                document.getElementById('categoryStatus').value = category.status;
+                document.getElementById('categoryOrder').value = category.display_order;
+                document.getElementById('categoryFeatured').checked = category.featured;
+                new bootstrap.Modal(document.getElementById('categoryModal')).show();
+            });
+    };
+
+    window.toggleCategoryStatus = function(id) {
+        fetch("{{ url('/inventory/categories') }}/"+id+"/toggle", {
+            method:'PATCH',
+            headers:{
+                'Accept':'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        }).then(r=>r.json()).then(resp=>{
+            if (resp.success) loadFromServer();
+        });
+    };
+
+    window.deleteCategoryModal = function(id) {
+        // Simple confirm route
+        if (!confirm('Delete this category? (Must have no products)')) return;
+        fetch("{{ url('/inventory/categories') }}/"+id, {
+            method:'DELETE',
+            headers:{
+                'Accept':'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        }).then(r=>r.json()).then(resp=>{
+            if (resp.success) loadFromServer(); else alert(resp.message||'Delete failed');
+        });
+    };
+
+    window.viewCategoryProducts = function(id) {
+        const modalEl = document.getElementById('productsModal');
+        const body = document.getElementById('productsModalContent');
+        body.innerHTML = '<div class="py-4 text-center text-muted">Loading products...</div>';
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        // Fetch category (for title) and its products
+        Promise.all([
+            fetch("{{ route('inventory.categories.show','__ID__') }}".replace('__ID__', id), {headers:{'Accept':'application/json'}})
+                .then(r=>r.ok?r.json():Promise.reject()),
+            fetch("{{ route('inventory.api.products.list') }}?category_id="+id, {headers:{'Accept':'application/json'}})
+                .then(r=>r.ok?r.json():Promise.reject())
+        ]).then(([catResp, prodResp])=>{
+            const cat = catResp.category;
+            document.getElementById('productsModalTitle').textContent = cat.name + ' Products';
+            const products = prodResp.data || [];
+            if (!products.length) {
+                body.innerHTML = '<div class="py-5 text-center text-muted">No products in this category yet.</div>';
+            } else {
+                body.innerHTML = '<div class="list-group">' + products.map(p=>renderProductItem(p)).join('') + '</div>';
+            }
+            // Update Add Product button to pre-select category via query param
+            const addBtn = document.getElementById('addProductToCategory');
+            if (addBtn) {
+                addBtn.onclick = ()=> window.location = "{{ route('inventory.products') }}?category_id="+id;
+            }
+        }).catch(()=>{
+            body.innerHTML = '<div class="py-5 text-center text-danger">Failed to load products.</div>';
+        });
+    };
+
+    function renderProductItem(p){
         return `
-            <div class="col-xl-3 col-lg-4 col-md-6">
-                <div class="card category-card">
-                    ${category.featured ? '<span class="featured-badge">Featured</span>' : ''}
-                    
-                    <div class="category-header">
-                        <div class="category-icon" style="background-color: ${category.color}">
-                            <i class="${category.icon}"></i>
-                        </div>
-                        <div class="category-name">${category.name}</div>
-                        <p class="category-description">${category.description}</p>
-                    </div>
-                    
-                    <div class="category-body">
-                        <div class="category-stats">
-                            <div class="stat-item">
-                                <span class="stat-number">${category.products_count}</span>
-                                <span class="stat-label">Products</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="badge status-badge status-${category.status}">
-                                    ${category.status.toUpperCase()}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="text-center">
-                            <small class="text-muted">
-                                Created ${new Date(category.created_at).toLocaleDateString()}
-                            </small>
-                        </div>
-                    </div>
-                    
-                    <div class="category-footer">
-                        <div class="category-actions">
-                            <button class="btn btn-outline-primary btn-action" onclick="viewCategoryProducts(${category.id})" title="View Products">
-                                <i class="fas fa-eye"></i> Products
-                            </button>
-                            <button class="btn btn-outline-info btn-action" onclick="editCategory(${category.id})" title="Edit">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-outline-${category.status === 'active' ? 'warning' : 'success'} btn-action" onclick="toggleCategoryStatus(${category.id})" title="${category.status === 'active' ? 'Deactivate' : 'Activate'}">
-                                <i class="fas fa-${category.status === 'active' ? 'pause' : 'play'}"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-action" onclick="deleteCategoryModal(${category.id})" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
+            <div class="product-item d-flex justify-content-between align-items-center list-group-item">
+                <div>
+                    <div class="product-name">${p.name} <small class="text-muted">(${p.sku||''})</small></div>
+                    <div class="product-stock">Stock: ${p.current_stock ?? 0} | Status: <span class="badge bg-${p.status==='active'?'success':'secondary'}">${p.status}</span></div>
+                </div>
+                <div class="text-end">
+                    <div class="product-price">₱${Number(p.base_price).toFixed(2)}</div>
                 </div>
             </div>
         `;
     }
 
-    function createCategoryRow(category) {
-        return `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="category-icon-small" style="background-color: ${category.color}">
-                            <i class="${category.icon}"></i>
+    function createCategoryCard(c) {
+                const emj = iconEmoji[c.icon] || '☕';
+                return `
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card category-card">
+                        ${c.featured ? '<span class="featured-badge">Featured</span>' : ''}
+                        <div class="category-header">
+                            <div class="category-icon" style="background:${c.color||'#8B4513'}">
+                                <span class="icon-emoji">${emj}</span>
+                            </div>
+                            <div class="category-name">${c.name}</div>
+                            <p class="category-description">${c.description??''}</p>
                         </div>
-                        <div>
-                            <div class="fw-bold">${category.name}</div>
-                            <small class="text-muted">${category.slug}</small>
-                            ${category.featured ? '<span class="badge bg-warning text-dark ms-2">Featured</span>' : ''}
+                        <div class="category-body">
+                            <div class="category-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number">${c.products_count||0}</span>
+                                    <span class="stat-label">Products</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="badge status-badge status-${c.status}">${c.status.toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <small class="text-muted">Created ${new Date(c.created_at).toLocaleDateString()}</small>
+                            </div>
+                        </div>
+                        <div class="category-footer">
+                            <div class="category-actions">
+                                <button class="btn btn-outline-primary btn-action" onclick="viewCategoryProducts(${c.id})"><i class="fas fa-eye"></i> Products</button>
+                                <button class="btn btn-outline-info btn-action" onclick="editCategory(${c.id})"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-${c.status==='active'?'warning':'success'} btn-action" onclick="toggleCategoryStatus(${c.id})"><i class="fas fa-${c.status==='active'?'pause':'play'}"></i></button>
+                                <button class="btn btn-outline-danger btn-action" onclick="deleteCategoryModal(${c.id})"><i class="fas fa-trash"></i></button>
+                            </div>
                         </div>
                     </div>
-                </td>
-                <td>
-                    <div style="max-width: 200px;">
-                        ${category.description}
-                    </div>
-                </td>
-                <td>
-                    <span class="fw-bold text-primary">${category.products_count}</span>
-                </td>
-                <td>
-                    <span class="badge status-badge status-${category.status}">
-                        ${category.status.toUpperCase()}
-                    </span>
-                </td>
-                <td>
-                    <div>${new Date(category.created_at).toLocaleDateString()}</div>
-                    <small class="text-muted">${new Date(category.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
-                </td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <button class="btn btn-outline-primary btn-action" onclick="viewCategoryProducts(${category.id})" title="View Products">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-info btn-action" onclick="editCategory(${category.id})" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-outline-${category.status === 'active' ? 'warning' : 'success'} btn-action" onclick="toggleCategoryStatus(${category.id})" title="${category.status === 'active' ? 'Deactivate' : 'Activate'}">
-                            <i class="fas fa-${category.status === 'active' ? 'pause' : 'play'}"></i>
-                        </button>
-                        <button class="btn btn-outline-danger btn-action" onclick="deleteCategoryModal(${category.id})" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+                </div>`;
     }
 
-    function updateStatistics() {
-        const totalCategories = allCategories.length;
-        const activeCategories = allCategories.filter(c => c.status === 'active').length;
-        const totalProducts = allCategories.reduce((sum, c) => sum + c.products_count, 0);
-        const popularCategory = allCategories.sort((a, b) => b.products_count - a.products_count)[0]?.name || 'N/A';
-
-        document.getElementById('total-categories').textContent = totalCategories;
-        document.getElementById('active-categories').textContent = activeCategories;
-        document.getElementById('total-products').textContent = totalProducts;
-        document.getElementById('popular-category').textContent = popularCategory;
-    }
-
-    // Modal functions
-    function showAddCategoryModal() {
-        editingCategoryId = null;
-        document.getElementById('categoryModalTitle').textContent = 'Add New Category';
-        document.getElementById('categoryForm').reset();
-        document.getElementById('categoryOrder').value = allCategories.length + 1;
-        const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
-        modal.show();
-    }
-
-    function saveCategory() {
-        const form = document.getElementById('categoryForm');
-        const formData = new FormData(form);
-        
-        // Basic validation
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
-        const categoryData = {
-            name: formData.get('name'),
-            slug: formData.get('slug'),
-            description: formData.get('description'),
-            icon: formData.get('icon'),
-            color: formData.get('color'),
-            status: formData.get('status'),
-            display_order: parseInt(formData.get('display_order')),
-            featured: formData.has('featured'),
-            products_count: 0,
-            created_at: new Date().toISOString()
-        };
-
-        if (editingCategoryId) {
-            // Update existing category
-            const categoryIndex = allCategories.findIndex(c => c.id === editingCategoryId);
-            if (categoryIndex !== -1) {
-                allCategories[categoryIndex] = { ...allCategories[categoryIndex], ...categoryData };
-                alert('Category updated successfully!');
-            }
-        } else {
-            // Add new category
-            const newId = Math.max(...allCategories.map(c => c.id)) + 1;
-            allCategories.push({ id: newId, ...categoryData, products: [] });
-            alert('Category added successfully!');
-        }
-
-        // Refresh the display
-        applyFilters();
-        updateStatistics();
-        
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
-        modal.hide();
-    }
-
-    function refreshCategories() {
-        // Simulate refresh with loading animation
-        const icon = document.getElementById('refreshBtn').querySelector('i');
-        icon.classList.add('fa-spin');
-        
-        setTimeout(() => {
-            loadCategories();
-            updateStatistics();
-            icon.classList.remove('fa-spin');
-            alert('Categories refreshed successfully!');
-        }, 1000);
-    }
-
-    function exportCategories() {
-        const csvData = convertToCSV(filteredCategories);
-        downloadCSV(csvData, 'categories.csv');
-    }
-
-    function convertToCSV(categories) {
-        const headers = ['ID', 'Name', 'Slug', 'Description', 'Status', 'Products Count', 'Featured', 'Display Order', 'Created'];
-        const rows = categories.map(category => [
-            category.id,
-            category.name,
-            category.slug,
-            category.description || '',
-            category.status,
-            category.products_count,
-            category.featured ? 'Yes' : 'No',
-            category.display_order,
-            new Date(category.created_at).toLocaleDateString()
-        ]);
-
-        return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
-    }
-
-    function downloadCSV(csvData, filename) {
-        const blob = new Blob([csvData], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        window.URL.revokeObjectURL(url);
-    }
-
-    // Global functions for button actions
-    window.editCategory = function(categoryId) {
-        const category = allCategories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        editingCategoryId = categoryId;
-        document.getElementById('categoryModalTitle').textContent = 'Edit Category';
-        
-        // Populate form fields
-        document.getElementById('categoryName').value = category.name;
-        document.getElementById('categorySlug').value = category.slug;
-        document.getElementById('categoryDescription').value = category.description || '';
-        document.getElementById('categoryIcon').value = category.icon;
-        document.getElementById('categoryColor').value = category.color;
-        document.getElementById('categoryStatus').value = category.status;
-        document.getElementById('categoryOrder').value = category.display_order;
-        document.getElementById('categoryFeatured').checked = category.featured;
-
-        const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
-        modal.show();
-    };
-
-    window.viewCategoryProducts = function(categoryId) {
-        const category = allCategories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        document.getElementById('productsModalTitle').textContent = `${category.name} Products`;
-        
-        const content = `
-            <div class="mb-3">
-                <h6>${category.products_count} products in this category</h6>
-            </div>
-            <div class="products-list">
-                ${category.products.map(product => `
-                    <div class="product-item">
-                        <div>
-                            <div class="product-name">${product.name}</div>
-                            <div class="product-stock">Stock: ${product.stock}</div>
+    function createCategoryRow(c) {
+                const emj = iconEmoji[c.icon] || '☕';
+                return `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="category-icon-small" style="background:${c.color||'#8B4513'};font-size:16px;">${emj}</div>
+                            <div>
+                                <div class="fw-bold">${c.name}</div>
+                                <small class="text-muted">${c.slug}</small>
+                                ${c.featured?'<span class="badge bg-warning text-dark ms-2">Featured</span>':''}
+                            </div>
                         </div>
-                        <div class="product-price">$${product.price.toFixed(2)}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        
-        document.getElementById('productsModalContent').innerHTML = content;
-        const modal = new bootstrap.Modal(document.getElementById('productsModal'));
-        modal.show();
-    };
+                    </td>
+                    <td><div style="max-width:200px;">${c.description??''}</div></td>
+                    <td><span class="fw-bold text-primary">${c.products_count||0}</span></td>
+                    <td><span class="badge status-badge status-${c.status}">${c.status.toUpperCase()}</span></td>
+                    <td>${new Date(c.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-outline-primary btn-action" onclick="viewCategoryProducts(${c.id})"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-outline-info btn-action" onclick="editCategory(${c.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-outline-${c.status==='active'?'warning':'success'} btn-action" onclick="toggleCategoryStatus(${c.id})"><i class="fas fa-${c.status==='active'?'pause':'play'}"></i></button>
+                            <button class="btn btn-outline-danger btn-action" onclick="deleteCategoryModal(${c.id})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+    }
 
-    window.toggleCategoryStatus = function(categoryId) {
-        const category = allCategories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        category.status = category.status === 'active' ? 'inactive' : 'active';
-
-        loadCategories();
-        updateStatistics();
-
-        alert(`Category ${category.status === 'active' ? 'activated' : 'deactivated'} successfully!`);
-    };
-
-    window.deleteCategoryModal = function(categoryId) {
-        const category = allCategories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        document.getElementById('deleteCategoryName').textContent = category.name;
-        document.getElementById('deleteCategoryProducts').textContent = category.products_count;
-
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
-
-        // Store category ID for later use
-        document.getElementById('confirmDeleteBtn').dataset.categoryId = categoryId;
-        document.getElementById('deactivateCategoryBtn').dataset.categoryId = categoryId;
-    };
-
-    window.deleteCategory = function() {
-        const categoryId = parseInt(document.getElementById('confirmDeleteBtn').dataset.categoryId);
-        
-        // Remove category from array
-        allCategories = allCategories.filter(c => c.id !== categoryId);
-        
-        // Refresh display
-        applyFilters();
-        updateStatistics();
-
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-        modal.hide();
-
-        alert('Category deleted successfully!');
-    };
-
-    window.deactivateCategory = function() {
-        const categoryId = parseInt(document.getElementById('deactivateCategoryBtn').dataset.categoryId);
-        const category = allCategories.find(c => c.id === categoryId);
-        
-        if (category) {
-            category.status = 'inactive';
-            
-            // Refresh display
-            loadCategories();
-            updateStatistics();
-
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-            modal.hide();
-
-            alert('Category deactivated successfully!');
-        }
-    };
-
-    // Utility function for debouncing
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
+    function debounce(fn, wait){
+        let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait); };
     }
 });
 </script>

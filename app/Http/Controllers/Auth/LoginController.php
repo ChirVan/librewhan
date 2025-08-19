@@ -14,11 +14,11 @@ class LoginController extends Controller
      */
     public function showLoginForm()
     {
-        // Debug: Force clear session for testing
-        Session::forget('authenticated');
-        Session::forget('user_email');
-        Session::forget('remember_me');
-        
+        // If already authenticated, go straight to dashboard
+        if (Session::has('authenticated')) {
+            return redirect()->route('dashboard');
+        }
+
         return view('auth.login');
     }
 

@@ -11,7 +11,12 @@ use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\UserManagementController;
 
 // Authentication Routes
-Route::get('/', [LoginController::class, 'showLoginForm']);
+// Root route: redirect based on authentication state
+Route::get('/', function () {
+    return session()->has('authenticated')
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -45,55 +50,35 @@ Route::middleware(['static.auth'])->group(function () {
     Route::post('/{id}/complete', [OrderController::class, 'complete'])->name('complete');
 });
 
-// Product/Inventory Management Routes
-Route::prefix('inventory')->name('inventory.')->group(function () {
-    // Main product routes
-    Route::get('/products', [ProductController::class, 'index'])->name('products');
-    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
-    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-    Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
-    Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->name('products.edit');
-    Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
-    Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
-    
-    // Stock management routes for products
-    Route::patch('/products/{id}/stock', [ProductController::class, 'updateStock'])->name('products.updateStock');
-    Route::patch('/products/{id}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
-    
-    // Product utility routes
-    Route::get('/products-data/low-stock', [ProductController::class, 'getLowStock'])->name('products.lowStock');
-    Route::get('/products-data/categories', [ProductController::class, 'getCategories'])->name('products.categories');
-    Route::post('/products/export', [ProductController::class, 'export'])->name('products.export');
-    Route::post('/products/bulk-update', [ProductController::class, 'bulkUpdate'])->name('products.bulkUpdate');
+// Inventory main pages (protected via static.auth only)
+Route::prefix('inventory')->name('inventory.')->group(function() {
+    // Page views
+    Route::get('/products', [ProductController::class,'page'])->name('products');
+// Inventory product JSON endpoints
+Route::prefix('api/products')->name('api.products.')->group(function() {
+    Route::get('/', [ProductController::class,'list'])->name('list');
+    Route::post('/', [ProductController::class,'store'])->name('store');
+    Route::get('/{product}', [ProductController::class,'show'])->name('show');
+    Route::put('/{product}', [ProductController::class,'update'])->name('update');
+    Route::delete('/{product}', [ProductController::class,'destroy'])->name('destroy');
+    Route::patch('/{product}/toggle-status', [ProductController::class,'toggleStatus'])->name('toggle');
+    Route::patch('/{product}/stock', [ProductController::class,'updateStock'])->name('stock');
+    Route::get('/_meta/categories', [ProductController::class,'metaCategories'])->name('metaCategories');
+});
+    Route::get('/stock', [StockController::class,'index'])->name('stock');
+    Route::get('/categories', [\App\Http\Controllers\CategoryController::class,'indexPage'])
+        ->name('categories'); // renamed from categories.page
+});
 
-    // Category routes
-    Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
-    Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
-    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-    Route::get('/categories/{id}', [CategoryController::class, 'show'])->name('categories.show');
-    Route::get('/categories/{id}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
-    Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-    
-    // Category utility routes
-    Route::patch('/categories/{id}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggleStatus');
-    Route::get('/categories/{id}/products', [CategoryController::class, 'getProducts'])->name('categories.products');
-    Route::post('/categories/update-order', [CategoryController::class, 'updateOrder'])->name('categories.updateOrder');
-    Route::post('/categories/export', [CategoryController::class, 'export'])->name('categories.export');
-    Route::post('/categories/bulk-update', [CategoryController::class, 'bulkUpdate'])->name('categories.bulkUpdate');
-    Route::get('/categories-data/stats', [CategoryController::class, 'getStats'])->name('categories.stats');
-
-    // Stock Level Management Routes
-    Route::get('/stock', [StockController::class, 'index'])->name('stock');
-    Route::get('/stock/levels', [StockController::class, 'getLevels'])->name('stock.levels');
-    Route::get('/stock/alerts', [StockController::class, 'getAlerts'])->name('stock.alerts');
-    Route::post('/stock/{id}/update', [StockController::class, 'updateStock'])->name('stock.update');
-    Route::post('/stock/bulk-update', [StockController::class, 'bulkUpdate'])->name('stock.bulkUpdate');
-    Route::post('/stock/generate-report', [StockController::class, 'generateReport'])->name('stock.report');
-    Route::post('/stock/{id}/thresholds', [StockController::class, 'setThresholds'])->name('stock.thresholds');
-    Route::get('/stock/{id}/history', [StockController::class, 'getMovementHistory'])->name('stock.history');
-    Route::post('/stock/alerts/{id}/dismiss', [StockController::class, 'dismissAlert'])->name('stock.dismissAlert');
-    Route::get('/stock/notifications', [StockController::class, 'getNotifications'])->name('stock.notifications');
+// JSON API endpoints (AJAX) for categories
+Route::prefix('inventory')->name('inventory.categories.')->group(function() {
+    Route::get('/categories/data', [\App\Http\Controllers\CategoryController::class,'index'])->name('data');
+    Route::post('/categories', [\App\Http\Controllers\CategoryController::class,'store'])->name('store');
+    Route::get('/categories/{category}', [\App\Http\Controllers\CategoryController::class,'show'])->name('show');
+    Route::put('/categories/{category}', [\App\Http\Controllers\CategoryController::class,'update'])->name('update');
+    Route::delete('/categories/{category}', [\App\Http\Controllers\CategoryController::class,'destroy'])->name('destroy');
+    Route::patch('/categories/{category}/toggle', [\App\Http\Controllers\CategoryController::class,'toggle'])->name('toggle');
+    Route::get('/categories-export', [\App\Http\Controllers\CategoryController::class,'export'])->name('export');
 });
 
 // Sales & Reports Routes

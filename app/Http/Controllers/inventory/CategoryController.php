@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Category;
@@ -22,8 +21,7 @@ class CategoryController extends Controller
         if ($search = $request->input('search')) {
             $q->where(function($qq) use ($search){
                 $qq->where('name','like',"%$search%")
-                   ->orWhere('description','like',"%$search%")
-                   ->orWhere('slug','like',"%$search%");
+                   ->orWhere('description','like',"%$search%");
             });
         }
         if ($status = $request->input('status')) {
@@ -76,18 +74,6 @@ class CategoryController extends Controller
         $category->status = $category->status === 'active' ? 'inactive' : 'active';
         $category->save();
         return response()->json(['success'=>true,'status'=>$category->status]);
-    }
-
-    // Alias for API route /toggle-status using {id}
-    public function toggleStatus($id) {
-        $category = Category::findOrFail($id);
-        return $this->toggle($category);
-    }
-
-    // API: products under a category (expects {id})
-    public function getProducts($id) {
-        $category = Category::with('products')->findOrFail($id);
-        return response()->json(['success'=>true,'products'=>$category->products]);
     }
 
     public function export(Request $request): StreamedResponse {

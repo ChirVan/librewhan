@@ -3,206 +3,95 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Product;
+use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        // In a real application, you would fetch products from database
-        // For now, we'll use sample data in the view
-        return view('inventory.products');
+    public function page(){ return view('inventory.products'); }
+
+    public function list(Request $request){
+        $q = Product::with('category');
+        if ($s = $request->input('search')) {
+            $q->where(function(Builder $qq) use ($s){
+                $qq->where('name','like',"%$s%")
+                   ->orWhere('sku','like',"%$s%");
+            });
+        }
+        if ($cid = $request->input('category_id')) $q->where('category_id',$cid);
+        if (($status = $request->input('status')) && $status !== 'all') $q->where('status',$status);
+        $q->orderBy('display_order')->orderBy('name');
+        return response()->json(['data'=>$q->get()]);
     }
 
-    public function create()
-    {
-        return view('inventory.products-create');
-    }
-
-    public function store(Request $request)
-    {
-        // Validate the request
-        $request->validate([
+    public function store(Request $request){
+        $data = $request->validate([
+            'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|unique:products,slug',
             'sku' => 'required|string|unique:products,sku',
-            'category' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'low_stock_alert' => 'required|integer|min:0',
-            'description' => 'nullable|string',
+            'base_price' => 'required|numeric|min:0',
+            'customizable' => 'boolean',
             'status' => 'required|in:active,inactive',
-            'customizable' => 'required|boolean'
+            'current_stock' => 'required|integer|min:0',
+            'low_stock_alert' => 'required|integer|min:0',
+            'display_order' => 'integer|min:0',
+            'description' => 'nullable|string'
         ]);
-
-        // In a real application, you would save to database
-        // Product::create($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Product created successfully',
-            'product' => $request->all()
-        ]);
+        $data['customizable'] = $request->boolean('customizable');
+        if (empty($data['slug'])) $data['slug'] = str($data['name'])->slug();
+        $product = Product::create($data);
+        return response()->json(['success'=>true,'product'=>$product->load('category')],201);
     }
 
-    public function show($id)
-    {
-        // In a real application, you would fetch from database
-        // $product = Product::findOrFail($id);
-        
-        return response()->json([
-            'success' => true,
-            'product' => [
-                'id' => $id,
-                'name' => 'Sample Product',
-                'sku' => 'SAMPLE-001',
-                'category' => 'Coffee',
-                'price' => 4.25,
-                'stock' => 25,
-                'status' => 'active'
-            ]
-        ]);
-    }
+    public function show(Product $product){ return response()->json(['product'=>$product->load('category')]); }
 
-    public function edit($id)
-    {
-        // In a real application, you would fetch from database
-        // $product = Product::findOrFail($id);
-        
-        return view('inventory.products-edit', compact('id'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        // Validate the request
-        $request->validate([
+    public function update(Request $request, Product $product){
+        $data = $request->validate([
+            'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
-            'sku' => 'required|string|unique:products,sku,' . $id,
-            'category' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'low_stock_alert' => 'required|integer|min:0',
-            'description' => 'nullable|string',
+            'slug' => 'nullable|string|unique:products,slug,' . $product->id,
+            'sku' => 'required|string|unique:products,sku,' . $product->id,
+            'base_price' => 'required|numeric|min:0',
+            'customizable' => 'boolean',
             'status' => 'required|in:active,inactive',
-            'customizable' => 'required|boolean'
+            'current_stock' => 'required|integer|min:0',
+            'low_stock_alert' => 'required|integer|min:0',
+            'display_order' => 'integer|min:0',
+            'description' => 'nullable|string'
         ]);
-
-        // In a real application, you would update in database
-        // $product = Product::findOrFail($id);
-        // $product->update($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Product updated successfully',
-            'product' => array_merge($request->all(), ['id' => $id])
-        ]);
+        $data['customizable'] = $request->boolean('customizable');
+        if (empty($data['slug'])) $data['slug'] = str($data['name'])->slug();
+        $product->update($data);
+        return response()->json(['success'=>true,'product'=>$product->load('category')]);
     }
 
-    public function destroy($id)
-    {
-        // In a real application, you would delete from database
-        // Product::findOrFail($id)->delete();
+    public function destroy(Product $product){ $product->delete(); return response()->json(['success'=>true]); }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Product deleted successfully'
-        ]);
+    public function toggleStatus(Product $product){
+        $product->status = $product->status === 'active' ? 'inactive' : 'active';
+        $product->save();
+        return response()->json(['success'=>true,'status'=>$product->status]);
     }
 
-    // Additional methods for product management
-    public function updateStock(Request $request, $id)
-    {
-        $request->validate([
+    public function updateStock(Request $request, Product $product){
+        $data = $request->validate([
             'action' => 'required|in:add,remove,set',
-            'quantity' => 'required|integer|min:0',
-            'reason' => 'nullable|string'
+            'quantity' => 'required|integer|min:0'
         ]);
-
-        // In a real application, you would:
-        // 1. Find the product
-        // 2. Update stock based on action
-        // 3. Log the stock change
-        // 4. Check for low stock alerts
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Stock updated successfully',
-            'product_id' => $id,
-            'action' => $request->action,
-            'quantity' => $request->quantity
-        ]);
+        $qty = (int)$data['quantity'];
+        $original = $product->current_stock;
+        match($data['action']) {
+            'add' => $product->current_stock += $qty,
+            'remove' => $product->current_stock = max(0,$product->current_stock - $qty),
+            'set' => $product->current_stock = $qty,
+        };
+        $product->save();
+        return response()->json(['success'=>true,'stock'=>$product->current_stock,'changed'=>$product->current_stock - $original]);
     }
 
-    public function toggleStatus(Request $request, $id)
-    {
-        // In a real application, you would:
-        // $product = Product::findOrFail($id);
-        // $product->status = $product->status === 'active' ? 'inactive' : 'active';
-        // $product->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Product status updated successfully',
-            'product_id' => $id
-        ]);
-    }
-
-    public function getLowStock()
-    {
-        // In a real application, you would:
-        // $lowStockProducts = Product::whereRaw('stock <= low_stock_alert')->get();
-
-        return response()->json([
-            'success' => true,
-            'low_stock_products' => [
-                // Sample low stock products
-                ['id' => 4, 'name' => 'Americano', 'stock' => 8, 'low_stock_alert' => 10],
-                ['id' => 8, 'name' => 'Club Sandwich', 'stock' => 0, 'low_stock_alert' => 5]
-            ]
-        ]);
-    }
-
-    public function getCategories()
-    {
-        // In a real application, you would:
-        // $categories = Product::distinct('category')->pluck('category');
-
-        return response()->json([
-            'success' => true,
-            'categories' => ['Coffee', 'Pastry', 'Food', 'Beverage']
-        ]);
-    }
-
-    public function export(Request $request)
-    {
-        // In a real application, you would:
-        // 1. Fetch products based on filters
-        // 2. Generate CSV/Excel file
-        // 3. Return download response
-
-        $filters = $request->only(['category', 'status', 'search']);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Export initiated',
-            'filters' => $filters
-        ]);
-    }
-
-    public function bulkUpdate(Request $request)
-    {
-        $request->validate([
-            'product_ids' => 'required|array',
-            'product_ids.*' => 'integer',
-            'action' => 'required|in:activate,deactivate,delete,update_category',
-            'value' => 'nullable|string'
-        ]);
-
-        // In a real application, you would:
-        // Product::whereIn('id', $request->product_ids)->update(['status' => $newStatus]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Bulk update completed successfully',
-            'affected_products' => count($request->product_ids)
-        ]);
+    public function metaCategories(){
+        return response()->json(['categories'=>Category::active()->orderBy('name')->get(['id','name'])]);
     }
 }
