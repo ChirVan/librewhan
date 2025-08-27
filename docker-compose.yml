@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    image: librewhan-app
+    container_name: librewhan-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    ports:
+      - "9000:9000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=librewhan
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+      - APP_ENV=local
+      - APP_KEY=base64:dummykey
+      - APP_DEBUG=true
+  db:
+    image: mysql:8.0
+    container_name: librewhan-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: librewhan
+      MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+volumes:
+  dbdata:
