@@ -1,7 +1,7 @@
 
 @extends('layouts.app')
 
-@section('title', 'Categories Management - Kalibrewhan Cafe')
+@section('title', 'Categories Management - Librewhan Cafe')
 
 @section('content')
 <div class="container">
@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update Add Product button to pre-select category via query param
             const addBtn = document.getElementById('addProductToCategory');
             if (addBtn) {
-                addBtn.onclick = ()=> window.location = "{{ route('inventory.products') }}?category_id="+id;
+                addBtn.onclick = ()=> window.location = "{{ route('inventory.products.index') }}?category_id="+id;
             }
         }).catch(()=>{
             body.innerHTML = '<div class="py-5 text-center text-danger">Failed to load products.</div>';

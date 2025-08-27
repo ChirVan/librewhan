@@ -11,11 +11,12 @@ use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\UserManagementController;
 
 // Authentication Routes
-// Root route: redirect based on authentication state
+// Root route: redirect to main dashboard if authenticated
 Route::get('/', function () {
-    return session()->has('authenticated')
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
+    if (session()->has('authenticated')) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -35,6 +36,10 @@ Route::get('/test-login', function() {
 // Protected Routes - Require Authentication
 Route::middleware(['static.auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Role-based dashboard routes
+    Route::get('/sms/dashboard', [DashboardController::class, 'smsIndex'])->name('sms.dashboard');
+    Route::get('/inventory/dashboard', [DashboardController::class, 'inventoryIndex'])->name('inventory.dashboard');
 
     // Order Management Routes
     Route::prefix('orders')->name('orders.')->group(function () {
@@ -53,21 +58,26 @@ Route::middleware(['static.auth'])->group(function () {
 // Inventory main pages (protected via static.auth only)
 Route::prefix('inventory')->name('inventory.')->group(function() {
     // Page views
-    Route::get('/products', [ProductController::class,'page'])->name('products');
-// Inventory product JSON endpoints
-Route::prefix('api/products')->name('api.products.')->group(function() {
-    Route::get('/', [ProductController::class,'list'])->name('list');
-    Route::post('/', [ProductController::class,'store'])->name('store');
-    Route::get('/{product}', [ProductController::class,'show'])->name('show');
-    Route::put('/{product}', [ProductController::class,'update'])->name('update');
-    Route::delete('/{product}', [ProductController::class,'destroy'])->name('destroy');
-    Route::patch('/{product}/toggle-status', [ProductController::class,'toggleStatus'])->name('toggle');
-    Route::patch('/{product}/stock', [ProductController::class,'updateStock'])->name('stock');
-    Route::get('/_meta/categories', [ProductController::class,'metaCategories'])->name('metaCategories');
-});
+    Route::get('/products', [ProductController::class,'page'])->name('products.index');
+    Route::get('/products/create', [ProductController::class,'create'])->name('products.create');
+    Route::get('/categories', [\App\Http\Controllers\CategoryController::class,'indexPage'])->name('categories');
+    Route::get('/categories/create', [\App\Http\Controllers\CategoryController::class,'create'])->name('categories.create');
     Route::get('/stock', [StockController::class,'index'])->name('stock');
-    Route::get('/categories', [\App\Http\Controllers\CategoryController::class,'indexPage'])
-        ->name('categories'); // renamed from categories.page
+    Route::put('/stock/{id}', [StockController::class, 'update'])->name('stock.update');
+    Route::get('/stock/alerts', [StockController::class, 'alerts'])->name('stock.alerts');
+    Route::get('/stock/history', [StockController::class, 'history'])->name('stock.history');
+        
+    // Inventory product JSON endpoints
+    Route::prefix('api/products')->name('api.products.')->group(function() {
+        Route::get('/', [ProductController::class,'list'])->name('list');
+        Route::post('/', [ProductController::class,'store'])->name('store');
+        Route::get('/{product}', [ProductController::class,'show'])->name('show');
+        Route::put('/{product}', [ProductController::class,'update'])->name('update');
+        Route::delete('/{product}', [ProductController::class,'destroy'])->name('destroy');
+        Route::patch('/{product}/toggle-status', [ProductController::class,'toggleStatus'])->name('toggle');
+        Route::patch('/{product}/stock', [ProductController::class,'updateStock'])->name('stock');
+        Route::get('/_meta/categories', [ProductController::class,'metaCategories'])->name('metaCategories');
+    });
 });
 
 // JSON API endpoints (AJAX) for categories
@@ -85,6 +95,9 @@ Route::prefix('inventory')->name('inventory.categories.')->group(function() {
 Route::prefix('sales')->name('sales.')->group(function () {
     // Main reports page
     Route::get('/report', [SalesReportController::class, 'index'])->name('report');
+    
+    // SMS Interface Route
+    Route::get('/sms', [SalesReportController::class, 'smsIndex'])->name('sms.index');
     
     // Report data endpoints
     Route::get('/report/summary', [SalesReportController::class, 'getSummaryData'])->name('report.summary');

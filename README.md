@@ -1,4 +1,4 @@
-<p align="center"><strong>Kalibrewhan POS & Inventory (Laravel)</strong></p>
+<p align="center"><strong>Librewhan Cafe SMS & Inventory (Laravel)</strong></p>
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="320" alt="Laravel Logo"></a></p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 
 ## Project Overview
 
-Kalibrewhan is a point-of-sale (POS) and basic inventory tracking system focused on beverage (coffee) ordering with size-based pricing, product customizations (milk, toppings, etc.), and order management dashboards. It is built with Laravel + Blade and uses dynamic JavaScript for real-time cart, payment mode, and change calculation logic.
+Librewhan is a sales management system (SMS) and basic inventory tracking system focused on beverage (coffee) ordering with size-based pricing, product customizations (milk, toppings, etc.), and order management dashboards. It is built with Laravel + Blade and uses dynamic JavaScript for real-time cart, payment mode, and change calculation logic.
 
 ### Core Features (current)
 * Order entry UI with cart, size pricing, customizations

@@ -4,7 +4,7 @@
     <div class="logo-header" data-background-color="dark">
       <a href="{{ route('dashboard') }}" class="logo">
         <span class="logo-text text-white fw-bold fs-4">
-          <i class="fas fa-coffee text-warning me-2"></i>Kalibrewhan
+          <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Librewhan Cafe" class="me-2" style="width: 30px; height: 30px; border-radius: 5px;">Librewhan Cafe
         </span>
       </a>
       <div class="nav-toggle">
@@ -31,6 +31,7 @@
           </a>
         </li>
         
+        @if(session('workspace_role') !== 'inventory')
         <li class="nav-section">
           <span class="sidebar-mini-icon">
             <i class="fa fa-ellipsis-h"></i>
@@ -38,6 +39,7 @@
           <h4 class="text-section">ORDER MANAGEMENT</h4>
         </li>
         
+        <!-- Orders Section - Available for SMS workspace -->
         <li class="nav-item">
           <a data-bs-toggle="collapse" href="#ordersSubmenu">
             <i class="fas fa-shopping-cart"></i>
@@ -65,7 +67,10 @@
             </ul>
           </div>
         </li>
+        @endif
 
+        @if(session('workspace_role') === 'inventory')
+        <!-- Inventory Section - Only for Inventory workspace -->
         <li class="nav-section">
           <span class="sidebar-mini-icon">
             <i class="fa fa-ellipsis-h"></i>
@@ -82,7 +87,7 @@
           <div class="collapse" id="inventory">
             <ul class="nav nav-collapse">
               <li>
-                <a href="{{ route('inventory.products') }}">
+                <a href="{{ route('inventory.products.index') }}">
                   <span class="sub-item">Products</span>
                 </a>
               </li>
@@ -100,6 +105,7 @@
           </div>
         </li>
 
+        <!-- Sales Reports Section - Only for Inventory workspace -->
         <li class="nav-section">
           <span class="sidebar-mini-icon">
             <i class="fa fa-ellipsis-h"></i>
@@ -123,31 +129,9 @@
             </ul>
           </div>
         </li>
+        @endif
 
-        <li class="nav-section">
-          <span class="sidebar-mini-icon">
-            <i class="fa fa-ellipsis-h"></i>
-          </span>
-          <h4 class="text-section">USER MANAGEMENT</h4>
-        </li>
-
-        <li class="nav-item">
-          <a data-bs-toggle="collapse" href="#users">
-            <i class="fas fa-users"></i>
-            <p>Users</p>
-            <span class="caret"></span>
-          </a>
-          <div class="collapse" id="users">
-            <ul class="nav nav-collapse">
-              <li>
-                <a href="{{ route('admin.users') }}">
-                  <span class="sub-item">Roles and Access</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </li>
-
+        <!-- Settings Section - Available for both workspaces -->
         <li class="nav-section">
           <span class="sidebar-mini-icon">
             <i class="fa fa-ellipsis-h"></i>
@@ -161,6 +145,46 @@
             <p>Settings</p>
           </a>
         </li>
+
+        <!-- Workspace Switcher - Only for Owners -->
+        @if(session('user_role') === 'owner')
+        <li class="nav-section">
+          <span class="sidebar-mini-icon">
+            <i class="fa fa-ellipsis-h"></i>
+          </span>
+          <h4 class="text-section">WORKSPACE</h4>
+        </li>
+
+        <li class="nav-item">
+          <a data-bs-toggle="collapse" href="#workspace">
+            <i class="fas fa-exchange-alt"></i>
+            <p>Switch Workspace</p>
+            <span class="caret"></span>
+          </a>
+          <div class="collapse" id="workspace">
+            <ul class="nav nav-collapse">
+              @if(session('workspace_role') !== 'sms')
+              <li>
+                <a href="{{ route('sms.dashboard') }}">
+                  <span class="sub-item">
+                    <i class="fas fa-cash-register me-2"></i>Sales Management System
+                  </span>
+                </a>
+              </li>
+              @endif
+              @if(session('workspace_role') !== 'inventory')
+              <li>
+                <a href="{{ route('inventory.dashboard') }}">
+                  <span class="sub-item">
+                    <i class="fas fa-boxes me-2"></i>Inventory Management
+                  </span>
+                </a>
+              </li>
+              @endif
+            </ul>
+          </div>
+        </li>
+        @endif
       </ul>
     </div>
   </div>

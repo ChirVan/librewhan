@@ -15,6 +15,11 @@ class CategoryController extends Controller
         return view('inventory.categories');
     }
 
+    // Create page
+    public function create() {
+        return view('inventory.categories-create');
+    }
+
     // JSON list with filters
     public function index(Request $request) {
         $q = Category::withCount('products');

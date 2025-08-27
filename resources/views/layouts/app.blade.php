@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>@yield('title', 'Kalibrewhan Cafe - Restaurant Management')</title>
+    <title>@yield('title', 'Librewhan Cafe - Restaurant Management')</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport"/>
   <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="icon" href="{{ asset('assets/img/kaiadmin/favicon.ico') }}" type="image/x-icon"/>
@@ -123,7 +123,7 @@
     <!-- Sweet Alert -->
     <script src="{{ asset('assets/js/plugin/sweetalert/sweetalert.min.js') }}"></script>
 
-    <!-- Kalibrewhan Cafe JS -->
+    <!-- Librewhan Cafe JS -->
     <script src="{{ asset('assets/js/kaiadmin.min.js') }}"></script>
 
     @stack('scripts')

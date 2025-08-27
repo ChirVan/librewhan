@@ -1,7 +1,7 @@
 
 @extends('layouts.app')
 
-@section('title', 'User Management - Kalibrewhan Cafe')
+@section('title', 'User Management - Librewhan Cafe')
 
 @section('content')
 <div class="container">
@@ -607,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 1,
             first_name: 'John',
             last_name: 'Doe',
-            email: 'john.doe@kalibrewhan.com',
+            email: 'john.doe@librewhan.com',
             phone: '+1234567890',
             role: 'admin',
             department: 'management',
@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 2,
             first_name: 'Jane',
             last_name: 'Smith',
-            email: 'jane.smith@kalibrewhan.com',
+            email: 'jane.smith@librewhan.com',
             phone: '+1234567891',
             role: 'manager',
             department: 'service',
@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 3,
             first_name: 'Mike',
             last_name: 'Johnson',
-            email: 'mike.johnson@kalibrewhan.com',
+            email: 'mike.johnson@librewhan.com',
             phone: '+1234567892',
             role: 'cashier',
             department: 'service',
@@ -649,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 4,
             first_name: 'Sarah',
             last_name: 'Wilson',
-            email: 'sarah.wilson@kalibrewhan.com',
+            email: 'sarah.wilson@librewhan.com',
             phone: '+1234567893',
             role: 'staff',
             department: 'kitchen',
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 5,
             first_name: 'David',
             last_name: 'Brown',
-            email: 'david.brown@kalibrewhan.com',
+            email: 'david.brown@librewhan.com',
             phone: '+1234567894',
             role: 'staff',
             department: 'service',

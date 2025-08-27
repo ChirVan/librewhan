@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Order History - Kalibrewhan Cafe')
+@section('title', 'Order History - Librewhan Cafe')
 
 @section('content')
 <div class="container">
@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create receipt content
         const receiptContent = `
             <div style="text-align: center; font-family: monospace; width: 300px; margin: 0 auto;">
-                <h3>KALIBREWHAN CAFE</h3>
+                <h3>LIBREWHAN CAFE</h3>
                 <p>Receipt #${order.id}</p>
                 <hr>
                 <div style="text-align: left;">

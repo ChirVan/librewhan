@@ -5,7 +5,7 @@
     <div class="logo-header" data-background-color="dark">
       <a href="{{ route('dashboard') }}" class="logo">
         <span class="logo-text text-white fw-bold fs-4">
-          <i class="fas fa-coffee text-warning me-2"></i>Librewhan
+          <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Librewhan Cafe" class="me-2" style="width: 25px; height: 25px; border-radius: 5px;">Librewhan
         </span>
       </a>
       <div class="nav-toggle">
@@ -212,7 +212,15 @@
             </div>
             <span class="profile-username">
               <span class="op-7">Hi,</span>
-              <span class="fw-bold">Admin</span>
+              <span class="fw-bold">
+                @if(session('user_role') === 'barista')
+                  Barista
+                @elseif(session('user_role') === 'owner')
+                  Owner
+                @else
+                  Admin
+                @endif
+              </span>
             </span>
           </a>
           <ul class="dropdown-menu dropdown-user animated fadeIn">
@@ -227,8 +235,25 @@
                     />
                   </div>
                   <div class="u-text">
-                    <h4>Admin User</h4>
-                    <p class="text-muted">admin@gmail.com</p>
+                    <h4>
+                      @if(session('user_role') === 'barista')
+                        Barista User
+                      @elseif(session('user_role') === 'owner')
+                        Owner/Manager
+                      @else
+                        Admin User
+                      @endif
+                    </h4>
+                    <p class="text-muted">{{ session('user_email', 'admin@gmail.com') }}</p>
+                    <div class="mb-2">
+                      <span class="badge badge-{{ session('workspace_role') === 'sms' ? 'success' : 'primary' }}">
+                        @if(session('workspace_role') === 'sms')
+                          <i class="fas fa-cash-register me-1"></i>SMS Workspace
+                        @else
+                          <i class="fas fa-boxes me-1"></i>Inventory Workspace
+                        @endif
+                      </span>
+                    </div>
                     <a
                       href="#"
                       class="btn btn-xs btn-secondary btn-sm"
@@ -240,8 +265,20 @@
               <li>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="#">My Profile</a>
-                <a class="dropdown-item" href="#">My Balance</a>
-                <a class="dropdown-item" href="#">Inbox</a>
+                @if(session('user_role') === 'owner')
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-header">Switch Workspace</div>
+                @if(session('workspace_role') !== 'sms')
+                <a class="dropdown-item" href="{{ route('sms.dashboard') }}">
+                  <i class="fas fa-cash-register me-2"></i>Point of Sale
+                </a>
+                @endif
+                @if(session('workspace_role') !== 'inventory')
+                <a class="dropdown-item" href="{{ route('inventory.dashboard') }}">
+                  <i class="fas fa-boxes me-2"></i>Inventory Management
+                </a>
+                @endif
+                @endif
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="#">Account Setting</a>
                 <div class="dropdown-divider"></div>

@@ -30,6 +30,8 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'role' => 'required|in:barista,owner',
+            'workspace' => 'required|in:sms,inventory',
         ]);
 
         // Static credentials
@@ -40,13 +42,23 @@ class LoginController extends Controller
             // Store authentication state in session
             Session::put('authenticated', true);
             Session::put('user_email', $staticEmail);
+            Session::put('user_role', $request->role); // barista or owner
+            Session::put('workspace_role', $request->workspace); // sms or inventory
             
             // Handle remember me functionality
             if ($request->has('remember')) {
                 Session::put('remember_me', true);
             }
 
-            return redirect()->intended(route('dashboard'));
+            // Log the access
+            Log::info('User logged in', [
+                'email' => $staticEmail,
+                'role' => $request->role,
+                'workspace' => $request->workspace
+            ]);
+
+            // Always redirect to main dashboard
+            return redirect()->route('dashboard');
         }
 
         return back()->withErrors([

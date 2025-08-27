@@ -11,6 +11,11 @@ class ProductController extends Controller
 {
     public function page(){ return view('inventory.products'); }
 
+    public function create(){ 
+        $categories = Category::where('status', 'active')->orderBy('name')->get();
+        return view('inventory.products-create', compact('categories')); 
+    }
+
     public function list(Request $request){
         $q = Product::with('category');
         if ($s = $request->input('search')) {

@@ -9,7 +9,12 @@ class SalesReportController extends Controller
 {
     public function index()
     {
-        return view('sales.report');
+    return view('sales.report');
+    }
+
+    public function smsIndex()
+    {
+        return view('sales.sms.index');
     }
 
     public function getSummaryData(Request $request)

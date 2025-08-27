@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title','Products Management - Kalibrewhan Cafe')
+@section('title','Products Management - Librewhan Cafe')
 @section('content')
 <div class="container">
   <div class="page-inner">
