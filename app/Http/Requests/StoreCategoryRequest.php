@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreCategoryRequest extends FormRequest {
     public function authorize(): bool {
-        // Using custom session-based auth (static.auth middleware)
+        // Using custom session-based auth (auth middleware)
         return session()->has('authenticated');
     }
     public function rules(): array {

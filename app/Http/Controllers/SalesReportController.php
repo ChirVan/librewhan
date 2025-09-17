@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
+// Mostly static data and placeholders for now
+// In a real application, replace with actual database queries and business logic
+
 class SalesReportController extends Controller
 {
     public function index()

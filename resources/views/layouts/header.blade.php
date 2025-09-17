@@ -29,6 +29,28 @@
         <span class="fw-bold fs-5 text-dark"><h2>Librewhan <span class="text-warning">Cafe</span></h2>
       </nav>
 
+      {{-- v 天使 v --}}
+
+<h4>
+  @if(auth()->user()?->usertype === 'barista')
+    Barista
+  @elseif(auth()->user()?->usertype === 'admin')
+    Admin
+  @else
+    NOT FOUND
+  @endif
+</h4>
+<p class="text-muted">{{ auth()->user()?->email ?? 'test@example.com' }}</p>
+<span class="badge badge-{{ session('workspace_role') === 'sms' ? 'success' : 'primary' }}">
+  @if(session('workspace_role') === 'sms')
+    <i class="fas fa-cash-register me-1"></i>SMS Workspace
+  @else
+    <i class="fas fa-boxes me-1"></i>Inventory Workspace
+  @endif
+</span>
+
+      {{-- ^ 天使 ^ --}}
+
       <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
 
         <li class="nav-item topbar-icon dropdown hidden-caret">

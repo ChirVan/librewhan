@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Dashboard - Cafe Management')
@@ -210,42 +211,69 @@
 
 @push('scripts')
 <script>
-    // Monthly Sales Chart
-  var ctx3 = document.getElementById('monthlySalesChart').getContext('2d');
-  var monthlySalesChart = new Chart(ctx3, {
-    type: 'bar',
-    data: {
-      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-      datasets: [{
-        label: 'Monthly Sales (₱)',
-        data: [15420, 18250, 22100, 19850, 25400, 28750, 31200, 29800, 33500, 28900, 31800, 35200],
-        backgroundColor: 'rgba(23, 125, 255, 0.8)',
-        borderColor: '#177dff',
-        borderWidth: 1,
-        borderRadius: 4,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: function(value) {
-              return '₱' + value.toLocaleString();
+(function () {
+  // guard: only run if the element exists
+  var canvas = document.getElementById('monthlySalesChart');
+  if (!canvas) return;
+
+  function initChart() {
+    try {
+      var ctx3 = canvas.getContext('2d');
+      if (typeof Chart === 'undefined') {
+        console.warn('Chart.js not found. Monthly sales chart initialization skipped.');
+        return;
+      }
+
+      var monthlySalesChart = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+          datasets: [{
+            label: 'Monthly Sales (₱)',
+            data: [15420,18250,22100,19850,25400,28750,31200,29800,33500,28900,31800,35200],
+            backgroundColor: 'rgba(23, 125, 255, 0.8)',
+            borderColor: '#177dff',
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '₱' + value.toLocaleString();
+                }
+              }
             }
           }
         }
-      }
+      });
+    } catch (err) {
+      console.error('Error initializing Monthly Sales Chart:', err);
     }
-  });
+  }
+
+  // If Chart is already loaded, init immediately; otherwise dynamically load Chart.js then init
+  if (typeof Chart !== 'undefined') {
+    initChart();
+  } else {
+    // dynamic load (CDN). This is safe and non-blocking.
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    script.onload = initChart;
+    script.onerror = function () {
+      console.error('Failed to load Chart.js from CDN.');
+    };
+    document.head.appendChild(script);
+  }
+})();
 </script>
 @endpush
+
 @endsection

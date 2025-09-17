@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order; // for findOrFail($id)
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     public function pending()
     {
-        // In a real application, you would fetch pending orders from database
-        // For now, we'll use sample data in the view
+        // Fetch pending orders
         return view('orders.pendingOrder');
     }
 
@@ -84,11 +84,16 @@ class OrderController extends Controller
         return view('orders.takeOrder', compact('products', 'categories'));
     }
 
+    public function manage()
+    {
+        // Fetch all orders
+        return view('orders.manageOrders');
+    }
+
     public function history()
     {
-    // In a real application, you would fetch completed orders from database
-    // You can add pagination, filtering, and sorting here
-    return view('orders.history');
+        // Fetch completed orders
+        return view('orders.history');
     }
 
     public function store(Request $request)

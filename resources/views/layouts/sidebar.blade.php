@@ -69,7 +69,6 @@
         </li>
         @endif
 
-        @if(session('workspace_role') === 'inventory')
         <!-- Inventory Section - Only for Inventory workspace -->
         <li class="nav-section">
           <span class="sidebar-mini-icon">
@@ -92,12 +91,12 @@
                 </a>
               </li>
               <li>
-                <a href="{{ route('inventory.categories') }}">
+                <a href=""> {{-- {{ route('inventory.categories') }} --}}
                   <span class="sub-item">Categories</span>
                 </a>
               </li>
               <li>
-                <a href="{{ route('inventory.stock') }}">
+                <a href=""> {{-- {{ route('inventory.stock') }} --}}
                   <span class="sub-item">Stock Levels</span>
                 </a>
               </li>
@@ -122,14 +121,13 @@
           <div class="collapse" id="reports">
             <ul class="nav nav-collapse">
               <li>
-                <a href="{{ route('sales.report') }}">
+                <a href=""> {{-- {{ route('sales.report') }} --}}
                   <span class="sub-item">Total Sales</span>
                 </a>
               </li>
             </ul>
           </div>
         </li>
-        @endif
 
         <!-- Settings Section - Available for both workspaces -->
         <li class="nav-section">
@@ -147,43 +145,43 @@
         </li>
 
         <!-- Workspace Switcher - Only for Owners -->
-        @if(session('user_role') === 'owner')
-        <li class="nav-section">
-          <span class="sidebar-mini-icon">
-            <i class="fa fa-ellipsis-h"></i>
-          </span>
-          <h4 class="text-section">WORKSPACE</h4>
-        </li>
+        @if(auth()->check() && auth()->user()->isAdmin())
+          <li class="nav-section">
+            <span class="sidebar-mini-icon">
+              <i class="fa fa-ellipsis-h"></i>
+            </span>
+            <h4 class="text-section">WORKSPACE</h4>
+          </li>
 
-        <li class="nav-item">
-          <a data-bs-toggle="collapse" href="#workspace">
-            <i class="fas fa-exchange-alt"></i>
-            <p>Switch Workspace</p>
-            <span class="caret"></span>
-          </a>
-          <div class="collapse" id="workspace">
-            <ul class="nav nav-collapse">
-              @if(session('workspace_role') !== 'sms')
-              <li>
-                <a href="{{ route('sms.dashboard') }}">
-                  <span class="sub-item">
-                    <i class="fas fa-cash-register me-2"></i>Sales Management System
-                  </span>
-                </a>
-              </li>
-              @endif
-              @if(session('workspace_role') !== 'inventory')
-              <li>
-                <a href="{{ route('inventory.dashboard') }}">
-                  <span class="sub-item">
-                    <i class="fas fa-boxes me-2"></i>Inventory Management
-                  </span>
-                </a>
-              </li>
-              @endif
-            </ul>
-          </div>
-        </li>
+          <li class="nav-item">
+            <a data-bs-toggle="collapse" href="#workspace">
+              <i class="fas fa-exchange-alt"></i>
+              <p>Switch Workspace</p>
+              <span class="caret"></span>
+            </a>
+            <div class="collapse" id="workspace">
+              <ul class="nav nav-collapse">
+                @if(session('workspace_role') !== 'sms')
+                <li>
+                  <a href="{{ route('sms.dashboard') }}">
+                    <span class="sub-item">
+                      <i class="fas fa-cash-register me-2"></i>Sales Management System
+                    </span>
+                  </a>
+                </li>
+                @endif
+                @if(session('workspace_role') !== 'inventory')
+                <li>
+                  <a href=""> {{-- {{ route('inventory.dashboard') }} --}}
+                    <span class="sub-item">
+                      <i class="fas fa-boxes me-2"></i>Inventory Management
+                    </span>
+                  </a>
+                </li>
+                @endif
+              </ul>
+            </div>
+          </li>
         @endif
       </ul>
     </div>

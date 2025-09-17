@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Storage;
 
 class UserManagementController extends Controller
 {
+    public function home(){
+        // Placeholder method for the 'home' route
+        return view('admin.home');
+    }
     /**
      * Display the user management page
      */

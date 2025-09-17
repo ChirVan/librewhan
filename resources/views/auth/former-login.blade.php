@@ -207,6 +207,7 @@
         color: #ff6b6b;
       }
     </style>
+    {{-- <style>.天使 {background-color: red;}</style> id="天使" --}}
   </head>
 
   <body>
@@ -271,15 +272,16 @@
           <div class="demo-credentials">
             <h6><i class="fas fa-info-circle me-2"></i>Demo Access</h6>
             <p><strong>Email:</strong> admin@gmail.com</p>
-            <p><strong>Password:</strong> 123</p>
+            <p><strong>Password:</strong> 12345678</p>
           </div>
 
+          <!-- backend modified 天使 -->
           <form method="POST" action="{{ route('login') }}">
             @csrf
             <input type="hidden" name="role" id="selectedRole" value="">
 
             <div class="mb-3">
-              <label for="email" class="form-label">
+              <label for="email" class="form-label" value="{{ __('Email') }}">
                 <i class="fas fa-envelope me-2"></i>Email Address
               </label>
               <input 
@@ -287,10 +289,11 @@
                 class="form-control @error('email') is-invalid @enderror" 
                 id="email" 
                 name="email" 
-                value="{{ old('email') }}" 
+                :value="old('email')"
                 required 
                 autofocus
                 placeholder="Enter your email address"
+                autocomplete="username"
               />
               @error('email')
                 <div class="invalid-feedback">
@@ -300,7 +303,7 @@
             </div>
 
             <div class="mb-3">
-              <label for="password" class="form-label">
+              <label for="password" class="form-label" value="{{ __('Password') }}">
                 <i class="fas fa-lock me-2"></i>Password
               </label>
               <input 
@@ -310,6 +313,7 @@
                 name="password" 
                 required 
                 placeholder="Enter your password"
+                autocomplete="current-password"
               />
               @error('password')
                 <div class="invalid-feedback">
@@ -319,15 +323,27 @@
             </div>
 
             <div class="form-check mb-3">
-              <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-              <label class="form-check-label" for="remember">
-                Remember Me
+              <input class="form-check-input" type="checkbox" name="remember" id="remember_me" {{ old('remember') ? 'checked' : '' }}>
+              <label class="form-check-label" for="remember_me">
+               {{ __('Remember me') }}
               </label>
-            </div>
+            </div>                
 
             <button type="submit" class="btn btn-warning w-100 mb-3">
-              <i class="fas fa-sign-in-alt me-2"></i>Login to <span id="roleText">System</span>
+              <i class="fas fa-sign-in-alt me-2"></i>{{ __('Log in') }} to <span id="roleText">System</span>
             </button>
+
+            <input type="hidden" name="role" id="selectedRole" value=""> <!-- 天使 -->
+            <input type="hidden" name="workspace" id="workspaceInput" value=""> <!-- 天使 -->
+
+            @if (Route::has('password.request'))
+              <div class="text-center">
+                <a class="btn btn-link btn-sm" href="{{ route('password.request') }}">
+                  {{ __('Forgot your password?') }}
+                </a>
+              </div>
+            @endif
+
           </form>
         </div>
       </div>
@@ -348,6 +364,9 @@
       
       // Set selected role
       document.getElementById('selectedRole').value = role;
+
+      // Also set workspace to same value so backend sees workspace
+      document.getElementById('workspaceInput').value = role; // Added by atesh
       
       // Update title and button text
       const titles = {
