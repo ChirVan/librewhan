@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ProductController extends Controller
 {
+    // Show the products page (for inventory.products.index route)
+    public function index()
+    {
+        return view('inventory.products');
+    }
     public function page(){ return view('inventory.products'); }
 
     public function create(){ 

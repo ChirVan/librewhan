@@ -29,28 +29,6 @@
         <span class="fw-bold fs-5 text-dark"><h2>Librewhan <span class="text-warning">Cafe</span></h2>
       </nav>
 
-      {{-- v 天使 v --}}
-
-<h4>
-  @if(auth()->user()?->usertype === 'barista')
-    Barista
-  @elseif(auth()->user()?->usertype === 'admin')
-    Admin
-  @else
-    NOT FOUND
-  @endif
-</h4>
-<p class="text-muted">{{ auth()->user()?->email ?? 'test@example.com' }}</p>
-<span class="badge badge-{{ session('workspace_role') === 'sms' ? 'success' : 'primary' }}">
-  @if(session('workspace_role') === 'sms')
-    <i class="fas fa-cash-register me-1"></i>SMS Workspace
-  @else
-    <i class="fas fa-boxes me-1"></i>Inventory Workspace
-  @endif
-</span>
-
-      {{-- ^ 天使 ^ --}}
-
       <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
 
         <li class="nav-item topbar-icon dropdown hidden-caret">
@@ -139,6 +117,7 @@
             </li>
           </ul>
         </li>
+
         <li class="nav-item topbar-icon dropdown hidden-caret">
           <a
             class="nav-link dropdown-toggle"
@@ -260,7 +239,7 @@
                     <h4>
                       @if(session('user_role') === 'barista')
                         Barista User
-                      @elseif(session('user_role') === 'owner')
+                      @elseif(session('user_role') === 'admin')
                         Owner/Manager
                       @else
                         Admin User
@@ -287,16 +266,16 @@
               <li>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="#">My Profile</a>
-                @if(session('user_role') === 'owner')
+                @if((auth()->check() && auth()->user()->usertype === 'admin'))
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-header">Switch Workspace</div>
                 @if(session('workspace_role') !== 'sms')
-                <a class="dropdown-item" href="{{ route('sms.dashboard') }}">
+                <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=sms">
                   <i class="fas fa-cash-register me-2"></i>Point of Sale
                 </a>
                 @endif
                 @if(session('workspace_role') !== 'inventory')
-                <a class="dropdown-item" href="{{ route('inventory.dashboard') }}">
+                <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=inventory">
                   <i class="fas fa-boxes me-2"></i>Inventory Management
                 </a>
                 @endif

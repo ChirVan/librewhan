@@ -11,7 +11,11 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // Always show the main dashboard design
+        // Switch workspace if requested via query param
+        $workspace = request('workspace');
+        if ($workspace === 'sms' || $workspace === 'inventory') {
+            session(['workspace_role' => $workspace]);
+        }
         return view('dashboard.index');
     }
     
@@ -20,13 +24,9 @@ class DashboardController extends Controller
      */
     public function smsIndex()
     {
-        // Update workspace session for owners who switch
-        if (session('user_role') === 'owner') {
-            session(['workspace_role' => 'sms']);
-        }
-        
-        // Use the same main dashboard design
-        return view('dashboard.index');
+    // Always update workspace session when switching
+    session(['workspace_role' => 'sms']);
+    return view('dashboard.index');
     }
     
     /**
@@ -37,12 +37,8 @@ class DashboardController extends Controller
      */
     public function inventoryIndex()
     {
-        // Update workspace session for owners who switch
-        if (session('user_role') === 'owner') {
-            session(['workspace_role' => 'inventory']);
-        }
-        
-        // Use the same main dashboard design
-        return view('dashboard.index');
+    // Always update workspace session when switching
+    session(['workspace_role' => 'inventory']);
+    return view('dashboard.index');
     }
 }

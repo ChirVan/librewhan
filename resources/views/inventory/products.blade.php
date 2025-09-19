@@ -8,7 +8,7 @@
       <ul class="breadcrumbs mb-3">
         <li class="nav-home"><a href="{{ route('dashboard') }}"><i class="icon-home"></i></a></li>
         <li class="separator"><i class="icon-arrow-right"></i></li>
-        <li class="nav-item"><a href="{{ route('inventory.categories') }}">Categories</a></li>
+  <li class="nav-item"><a href="{{ route('inventory.categories.index') }}">Categories</a></li>
         <li class="separator"><i class="icon-arrow-right"></i></li>
         <li class="nav-item">Products</li>
       </ul>
