@@ -87,6 +87,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/products', [ProductController::class, 'index'])->name('products.index');
             Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
             Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
+            // ADD THIS LINE - Categories page route
+            Route::get('/categories', [CategoryController::class, 'indexPage'])->name('categories.index');
         });
 
         // Admin-only management
@@ -97,7 +99,17 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-            Route::resource('categories', CategoryController::class)->except(['show']);
+            // REPLACE this line - Remove the resource route that was causing conflict
+            // Route::resource('categories', CategoryController::class)->except(['show']);
+            // WITH these specific routes for category management
+            Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+            Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+            Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+            Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+            Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+            Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+            Route::get('/categories/export', [CategoryController::class, 'export'])->name('categories.export');
+            
             Route::post('/stocks/adjust', [StockController::class, 'adjust'])->name('stocks.adjust');
         });
 

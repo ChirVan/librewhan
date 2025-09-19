@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Categories Management - Librewhan Cafe')
@@ -546,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
             status: document.getElementById('statusFilter').value,
             sort: document.getElementById('sortFilter').value
         });
-    fetch("{{ route('inventory.categories.data') }}?"+params.toString(), {
+        fetch("/inventory/categories/data?" + params.toString(), {
             headers: { 'Accept':'application/json' }
         })
         .then(r=>r.json())
@@ -565,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('sortFilter').addEventListener('change', loadFromServer);
 
         document.getElementById('addCategoryBtn').addEventListener('click', showAddCategoryModal);
-    document.getElementById('exportBtn').addEventListener('click', ()=> window.location = "{{ route('inventory.categories.export') }}");
+        document.getElementById('exportBtn').addEventListener('click', ()=> window.location = "{{ route('inventory.categories.export') }}");
         document.getElementById('refreshBtn').addEventListener('click', ()=> loadFromServer());
         document.getElementById('saveCategoryBtn').addEventListener('click', saveCategory);
 
@@ -705,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.toggleCategoryStatus = function(id) {
-        fetch("{{ url('/inventory/categories') }}/"+id+"/toggle", {
+        fetch("{{ url('/api/categories') }}/"+id+"/toggle-status", {
             method:'PATCH',
             headers:{
                 'Accept':'application/json',
@@ -738,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
         // Fetch category (for title) and its products
         Promise.all([
-            fetch("{{ route('inventory.categories.show','__ID__') }}".replace('__ID__', id), {headers:{'Accept':'application/json'}})
+            fetch("{{ url('/inventory/categories') }}/"+id, {headers:{'Accept':'application/json'}})
                 .then(r=>r.ok?r.json():Promise.reject()),
             fetch("{{ route('inventory.api.products.list') }}?category_id="+id, {headers:{'Accept':'application/json'}})
                 .then(r=>r.ok?r.json():Promise.reject())
