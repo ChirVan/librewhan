@@ -1,5 +1,7 @@
 <?php
 
+/* BY CHATGPT */
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
@@ -113,9 +115,6 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('/{product}/stock', [ProductController::class, 'updateStock'])->name('stock');
             Route::get('/_meta/categories', [ProductController::class, 'metaCategories'])->name('metaCategories');
         });
-
-        // POS/Inventory AJAX: categories data for POS
-        Route::get('/categories/data', [\App\Http\Controllers\CategoryController::class, 'index'])->name('categories.data');
     });
 
     /*
