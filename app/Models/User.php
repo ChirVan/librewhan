@@ -29,7 +29,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'usertype', // newly added by atesh
+        'usertype', // newly added by 天使
     ];
 
     // Helpers for role checks by atesh

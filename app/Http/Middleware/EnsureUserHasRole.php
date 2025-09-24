@@ -15,12 +15,7 @@ class EnsureUserHasRole
      */
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        $user = Auth::user();
-        if (! $user) {
-            abort(403);
-        }
-
-        // collect allowed roles, support both comma and pipe separators and multiple params
+        // Normalize allowed roles
         $allowed = [];
         foreach ($roles as $r) {
             $parts = preg_split('/[|,]/', $r);
@@ -30,13 +25,22 @@ class EnsureUserHasRole
             }
         }
 
-        // Determine user's role from model or legacy session
-        $role = strtolower($user->usertype ?? $user->role ?? session('user_role') ?? '');
-
-        if (! in_array($role, $allowed, true)) {
-            abort(403);
+        // 1) Check legacy session role first (this supports your old static auth)
+        $sessionRole = strtolower(session('user_role', '') ?: '');
+        if ($sessionRole && in_array($sessionRole, $allowed, true)) {
+            return $next($request);
         }
 
-        return $next($request);
+        // 2) Then check authenticated user (Jetstream/Fortify)
+        $user = Auth::user();
+        if ($user) {
+            $role = strtolower($user->usertype ?? $user->role ?? '');
+            if ($role && in_array($role, $allowed, true)) {
+                return $next($request);
+            }
+        }
+
+        // default deny
+        abort(403);
     }
 }

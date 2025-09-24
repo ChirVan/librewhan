@@ -29,81 +29,12 @@
           $workspaceRole = session('workspace_role', 'sms');
         @endphp
 
-        @if($workspaceRole === 'inventory')
-          <li class="nav-section">
-            <span class="sidebar-mini-icon">
-              <i class="fa fa-ellipsis-h"></i>
-            </span>
-            <h4 class="text-section">INVENTORY</h4>
-          </li>
-          <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <a href="{{ route('dashboard') }}">
-              <i class="fas fa-tachometer-alt"></i>
-              <p>Dashboard</p>
-            </a>
-          </li>
-          <li class="nav-section">
-            <span class="sidebar-mini-icon">
-              <i class="fa fa-ellipsis-h"></i>
-            </span>
-            <h4 class="text-section">INVENTORY MANAGEMENT</h4>
-          </li>
-          <li class="nav-item">
-            <a data-bs-toggle="collapse" href="#inventorySubmenu">
-              <i class="fas fa-boxes"></i>
-              <p>Inventory</p>
-              <span class="caret"></span>
-            </a>
-            <div class="collapse" id="inventorySubmenu">
-              <ul class="nav nav-collapse">
-                <li>
-                    <a href="{{ route('inventory.products.index') }}">
-                    <span class="sub-item">Products</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="{{ route('inventory.categories.index') }}">
-                    <span class="sub-item">Kategorii</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="{{ route('inventory.stocks.index') }}">
-                    <span class="sub-item">Stock</span>
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-section">
-            <span class="sidebar-mini-icon">
-              <i class="fa fa-ellipsis-h"></i>
-            </span>
-            <h4 class="text-section">ROLES MANAGEMENT</h4>
-          </li>
-          <li class="nav-item {{ request()->is('auth/usermanagement') ? 'active' : '' }}">
-            <a href="{{ url('auth/usermanagement') }}">
-              <i class="fas fa-users-cog"></i>
-              <p>User Management</p>
-            </a>
-          </li>
-        @else
+        {{-- @if($workspaceRole === 'inventory') --}}
           <li class="nav-section">
             <span class="sidebar-mini-icon">
               <i class="fa fa-ellipsis-h"></i>
             </span>
             <h4 class="text-section">Cafe</h4>
-          </li>
-          <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <a href="{{ route('dashboard') }}">
-              <i class="fas fa-tachometer-alt"></i>
-              <p>Dashboard</p>
-            </a>
-          </li>
-          <li class="nav-section">
-            <span class="sidebar-mini-icon">
-              <i class="fa fa-ellipsis-h"></i>
-            </span>
-            <h4 class="text-section">ORDER MANAGEMENT</h4>
           </li>
           <li class="nav-item">
             <a data-bs-toggle="collapse" href="#ordersSubmenu">
@@ -135,25 +66,80 @@
             <span class="sidebar-mini-icon">
               <i class="fa fa-ellipsis-h"></i>
             </span>
-            <h4 class="text-section">REPORTS & ANALYTICS</h4>
+            <h4 class="text-section">INVENTORY</h4>
           </li>
           <li class="nav-item">
-            <a data-bs-toggle="collapse" href="#reports">
-              <i class="fas fa-chart-line"></i>
-              <p>Sales Reports</p>
+            <a data-bs-toggle="collapse" href="#inventorySubmenu">
+              <i class="fas fa-boxes"></i>
+              <p>Inventory</p>
               <span class="caret"></span>
             </a>
-            <div class="collapse" id="reports">
+            <div class="collapse" id="inventorySubmenu">
               <ul class="nav nav-collapse">
                 <li>
-                  <a href="{{ route('sales.report') }}">
-                    <span class="sub-item">Total Sales</span>
+                  <a href="{{ route('dashboard') }}">
+                    <span class="sub-item">Dashboard</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('inventory.products.index') }}">
+                    <span class="sub-item">Products</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('inventory.categories.index') }}">
+                    <span class="sub-item">Categories</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="{{ route('inventory.stocks.index') }}">
+                    <span class="sub-item">Stock</span>
                   </a>
                 </li>
               </ul>
             </div>
           </li>
+        {{-- @else --}}
           @if($isAdmin)
+            <li class="nav-section">
+              <span class="sidebar-mini-icon">
+                <i class="fa fa-ellipsis-h"></i>
+              </span>
+              <h4 class="text-section">REPORTS & ANALYTICS</h4>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#reports">
+                <i class="fas fa-chart-line"></i>
+                <p>Sales Reports</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="reports">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="{{ route('dashboard') }}"> {{-- same as inventory dashboard lmao --}}
+                      <span class="sub-item">Dashboard</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="{{ route('sales.report') }}">
+                      <span class="sub-item">Total Sales</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-section">
+              <span class="sidebar-mini-icon">
+                <i class="fa fa-ellipsis-h"></i>
+              </span>
+              <h4 class="text-section">ROLES MANAGEMENT</h4>
+            </li>
+            <li class="nav-item {{ request()->is('auth/usermanagement') ? 'active' : '' }}">
+              <a href="{{ url('admin/users') }}">
+                <i class="fas fa-users-cog"></i>
+                <p>User Management</p>
+              </a>
+            </li>
             <li class="nav-section">
               <span class="sidebar-mini-icon">
                 <i class="fa fa-ellipsis-h"></i>
@@ -181,7 +167,7 @@
               </div>
             </li>
           @endif
-        @endif
+        {{-- @endif --}}
         <li class="nav-section">
           <span class="sidebar-mini-icon">
             <i class="fa fa-ellipsis-h"></i>

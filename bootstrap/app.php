@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             // 'auth' => \App\Http\Middleware\StaticAuth::class, // static auth, not needed anymore 天使
             'role' => \App\Http\Middleware\EnsureUserHasRole::class, // added 天使
+            
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

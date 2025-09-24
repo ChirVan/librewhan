@@ -2,10 +2,13 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>@yield('title', 'Librewhan Cafe - Restaurant Management')</title>
+    <title>@yield('title', config('app.name'))</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport"/>
-  <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="icon" href="{{ asset('assets/img/kaiadmin/favicon.ico') }}" type="image/x-icon"/>
+
+    @livewireStyles
+
 
     <!-- Fonts and icons -->
     <script src="{{ asset('assets/js/plugin/webfont/webfont.min.js') }}"></script>
@@ -127,5 +130,7 @@
     <script src="{{ asset('assets/js/kaiadmin.min.js') }}"></script>
 
     @stack('scripts')
+    @livewireScripts
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   </body>
 </html>

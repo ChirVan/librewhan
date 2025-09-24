@@ -1,39 +1,33 @@
-<x-form-section submit="updatePassword">
-    <x-slot name="title">
-        {{ __('Update Password') }}
-    </x-slot>
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Update Password</h5>
+    <p class="text-muted small">Ensure your account uses a min. of 8 characters to stay secure.</p>
 
-    <x-slot name="description">
-        {{ __('Ensure your account is using a long, random password to stay secure.') }}
-    </x-slot>
+    <form wire:submit.prevent="updatePassword">
+      <div class="mb-3">
+        <label class="form-label">Current Password</label>
+        <input id="current_password" type="password" wire:model.defer="state.current_password"
+               class="form-control" autocomplete="current-password" />
+        @error('state.current_password') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+      </div>
 
-    <x-slot name="form">
-        <div class="col-span-6 sm:col-span-4">
-            <x-label for="current_password" value="{{ __('Current Password') }}" />
-            <x-input id="current_password" type="password" class="mt-1 block w-full" wire:model="state.current_password" autocomplete="current-password" />
-            <x-input-error for="current_password" class="mt-2" />
+      <div class="mb-3">
+        <label class="form-label">New Password</label>
+        <input id="password" type="password" wire:model.defer="state.password" class="form-control" autocomplete="new-password" />
+        @error('state.password') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Confirm New Password</label>
+        <input id="password_confirmation" type="password" wire:model.defer="state.password_confirmation" class="form-control" autocomplete="new-password" />
+      </div>
+
+      <div class="d-flex align-items-center justify-content-end gap-3 p-2 rounded bg-light bg-opacity-25">
+        <button class="btn btn-warning btn-sm px-3" type="submit" wire:loading.attr="disabled">Save</button>
+        <div class="text-success small fw-bold" wire:loading.remove wire:target="updatePassword">
+          @if (session('status') === 'password-updated') ✓ Saved. @endif
         </div>
-
-        <div class="col-span-6 sm:col-span-4">
-            <x-label for="password" value="{{ __('New Password') }}" />
-            <x-input id="password" type="password" class="mt-1 block w-full" wire:model="state.password" autocomplete="new-password" />
-            <x-input-error for="password" class="mt-2" />
-        </div>
-
-        <div class="col-span-6 sm:col-span-4">
-            <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" />
-            <x-input id="password_confirmation" type="password" class="mt-1 block w-full" wire:model="state.password_confirmation" autocomplete="new-password" />
-            <x-input-error for="password_confirmation" class="mt-2" />
-        </div>
-    </x-slot>
-
-    <x-slot name="actions">
-        <x-action-message class="me-3" on="saved">
-            {{ __('Saved.') }}
-        </x-action-message>
-
-        <x-button>
-            {{ __('Save') }}
-        </x-button>
-    </x-slot>
-</x-form-section>
+      </div>
+    </form>
+  </div>
+</div>

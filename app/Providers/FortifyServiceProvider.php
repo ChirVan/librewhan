@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use App\Models\User;
+use Laravel\Fortify\Contracts\UpdatesUserProfileInformation;
+use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Actions\Fortify\UpdateUserPassword;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,21 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(
             \Laravel\Fortify\Contracts\LoginResponse::class,
             \App\Http\Responses\LoginResponse::class
+        );
+
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\UpdatesUserProfileInformation::class,
+            \App\Actions\Fortify\UpdateUserProfileInformation::class
+        );
+
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\UpdatesUserPasswords::class,
+            \App\Actions\Fortify\UpdateUserPassword::class
+        );
+
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\ResetsUserPasswords::class,
+            \App\Actions\Fortify\ResetUserPassword::class
         );
     }
 
@@ -33,9 +51,16 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($email.$request->ip());
         });
 
-        // Two-factor limiter (optional but common)
         RateLimiter::for('two-factor', function (Request $request) {
-            return Limit::perMinute(5)->by($request->session()->get('login.id'));
+            // Fortify sometimes stores a temporary session key 'login.id' during the
+            // login flow. If it's not present (or you're using different auth flows),
+            // fall back to the request IP so the limiter doesn't resolve to null.
+            
+            $request->session()->all(); // FOR TESTING, REMOVE IF NOT NEEDED
+            
+            $key = $request->session()->get('login.id') ?: $request->ip();
+
+            return Limit::perMinute(5)->by($key);
         });
 
         // Accept workspace/role and set legacy session keys
@@ -51,7 +76,6 @@ class FortifyServiceProvider extends ServiceProvider
             $user = User::where('email', $request->email)->first();
 
             if ($user && Hash::check($request->password, $user->password)) {
-                // Determine workspace (frontend uses sms|inventory)
                 $workspace = $request->input('workspace') ?? $request->input('role') ?? 'sms';
 
                 // Set the legacy session keys so StaticAuth and other code continue to work

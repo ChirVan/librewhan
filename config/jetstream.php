@@ -44,7 +44,7 @@ return [
     |
     */
 
-    'guard' => 'sanctum',
+    'guard' => 'web', // CHANGED FROM SANCTUM TO WEB
 
     /*
     |--------------------------------------------------------------------------

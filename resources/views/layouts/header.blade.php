@@ -56,7 +56,7 @@
                   <a href="#">
                     <div class="notif-img">
                       <img
-                        src="{{ asset('assets/img/jm_denis.jpg') }}"
+                        src="{{ optional(auth()->user())->profile_photo_url ?? asset('assets/img/chadengle.jpg') }}"
                         alt="Img Profile"
                       />
                     </div>
@@ -69,7 +69,7 @@
                   <a href="#">
                     <div class="notif-img">
                       <img
-                        src="{{ asset('assets/img/chadengle.jpg') }}"
+                        src="{{ asset('assets/img/profile.jpg') }}"
                         alt="Img Profile"
                       />
                     </div>
@@ -206,7 +206,7 @@
           >
             <div class="avatar-sm">
               <img
-                src="{{ asset('assets/img/profile.jpg') }}"
+                src="{{ optional(auth()->user())->profile_photo_url ?? asset('assets/img/chadengle.jpg') }}"
                 alt="..."
                 class="avatar-img rounded-circle"
               />
@@ -230,7 +230,7 @@
                 <div class="user-box">
                   <div class="avatar-lg">
                     <img
-                      src="{{ asset('assets/img/profile.jpg') }}"
+                      src="{{ optional(auth()->user())->profile_photo_url ?? asset('assets/img/chadengle.jpg') }}"
                       alt="image profile"
                       class="avatar-img rounded"
                     />
@@ -256,7 +256,7 @@
                       </span>
                     </div>
                     <a
-                      href="#"
+                      href="{{ route('profile.show') }}"
                       class="btn btn-xs btn-secondary btn-sm"
                       >View Profile</a
                     >
@@ -265,7 +265,7 @@
               </li>
               <li>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">My Profile</a>
+                <a class="dropdown-item" href="{{ route('profile.show') }}">My Profile</a>
                 @if((auth()->check() && auth()->user()->usertype === 'admin'))
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-header">Switch Workspace</div>
@@ -283,12 +283,12 @@
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="#">Account Setting</a>
                 <div class="dropdown-divider"></div>
-                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                <form method="POST" action="{{ route('logout') }}" style="display:inline;">
                   @csrf
-                  <a class="dropdown-item" href="#" onclick="event.preventDefault(); this.closest('form').submit();">
-                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                  </a>
-                </form>
+                  <button type="submit" class="dropdown-item" style="border:none; background:none; padding:0;">
+                      <i class="fas fa-sign-out-alt me-2"></i>Logout
+                  </button>
+              </form>
               </li>
             </div>
           </ul>

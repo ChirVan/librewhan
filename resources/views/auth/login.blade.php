@@ -1,6 +1,6 @@
 @extends('layouts.guest') {{-- @extends('layouts.app') --}}
 
-@section('title', 'Login - Kalibrewhan')
+@section('title', 'Login - '.config('app.name'))
 
 @push('head')
 <style>

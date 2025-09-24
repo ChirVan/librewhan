@@ -1,7 +1,5 @@
 <?php
 
-/* BY CHATGPT */
-
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
@@ -10,8 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SalesReportController;
-use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\UserManagementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,29 +29,27 @@ use App\Http\Controllers\HomeController;
 | Controller methods required in HomeController:
 | - index() : redirects to dashboard or login (as original closure did)
 | - clearSession() : flushes session and redirects to login
-| - legacyLoginView() : returns view('auth.login') for testing
+| - testLogin() : returns view('auth.login') for testing
 */
 // Root - route to HomeController@index (avoids closure)
-Route::get('/', [HomeController::class, 'index'])->name('root');
+// Route::get('/', [HomeController::class, 'index'])->name('root');
 
 // Utility / debugging routes - moved to HomeController methods to avoid closures
-Route::get('/clear-session', [HomeController::class, 'clearSession'])->name('util.clearSession');
-Route::get('/test-login', [HomeController::class, 'testLogin'])->name('util.testLogin');
+// Route::get('/clear-session', [HomeController::class, 'clearSession'])->name('util.clearSession');
+// Route::get('/test-login', [HomeController::class, 'testLogin'])->name('util.testLogin');
 
 /*
 |------------------------------
-| POS routes (barista + admin)
-| prefix: /pos, names: pos.*
+| Jetstream Routes(automatically not here)
+|------------------------------
+| post /login // {{ route('login') }}
+| user/profile // {{ route('profile.show') }}
+| 
 |------------------------------
 */
-Route::middleware(['auth', 'role:barista|admin'])
-    ->prefix('pos')
-    ->name('pos.')
-    ->group(function () {
-        Route::get('/', [OrderController::class, 'take'])->name('take');
-        Route::get('/pending', [OrderController::class, 'pending'])->name('pending');
-        Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-    });
+Route::get('/', function () {
+    return redirect()->route('login');
+})->name('root');
 
 /*
 |------------------------------
@@ -66,7 +61,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/sms', [DashboardController::class, 'smsIndex'])->name('dashboard.sms');
     Route::get('/dashboard/inventory', [DashboardController::class, 'inventoryIndex'])->name('dashboard.inventory');
-
 
     // Order management routes (barista + admin)
     Route::middleware('role:admin|barista')->prefix('orders')->name('orders.')->group(function () {
@@ -89,9 +83,11 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/products', [ProductController::class, 'index'])->name('products.index');
             Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
             Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
+            // ADD THIS LINE - Categories page route
+            Route::get('/categories', [CategoryController::class, 'indexPage'])->name('categories.index');
         });
 
-        // Admin-only management
+        // Admin-only Products Management
         Route::middleware('role:admin')->group(function () {
             Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
             Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -99,7 +95,17 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-            Route::resource('categories', CategoryController::class)->except(['show']);
+            // REPLACE this line - Remove the resource route that was causing conflict
+            // Route::resource('categories', CategoryController::class)->except(['show']);
+            // WITH these specific routes for category management
+            Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+            Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+            Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+            Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+            Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+            Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+            Route::get('/categories/export', [CategoryController::class, 'export'])->name('categories.export');
+            
             Route::post('/stocks/adjust', [StockController::class, 'adjust'])->name('stocks.adjust');
         });
 
@@ -147,6 +153,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show'); // {order} // show() does not exist yet
 
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+        // store() already exists above
         // update() already exists above
         // dsetroy() already exists above
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus'); // {order}
@@ -158,7 +165,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Sales & Reports routes (protected)
     Route::prefix('sales')->name('sales.')->group(function () {
-        Route::get('/report', [SalesReportController::class, 'index'])->name('report');
+        Route::get('/', [SalesReportController::class, 'index'])->name('sms.index'); // when admin logged in, go to sales
+        Route::get('/report', [SalesReportController::class, 'index'])->name(name: 'report');
         Route::get('/sms', [SalesReportController::class, 'smsIndex'])->name('sms.index');
 
         Route::get('/report/summary', [SalesReportController::class, 'getSummaryData'])->name('report.summary');
@@ -183,28 +191,22 @@ Route::middleware(['auth'])->group(function () {
 
     // User Management (admin-only)
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/', [UserManagementController::class, 'home'])->name('home'); // home() does not exist yet // replace closure
 
         Route::resource('users', UserManagementController::class);
         // TODO: resource('users') already registers CRUD routes for users. The individual routes below are duplicates and can be removed later.
-        Route::get('/users/data', [UserManagementController::class, 'getUsers'])->name('users.data');
-        // Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
-        // Route::get('/users/{id}', [UserManagementController::class, 'show'])->name('users.show'); // {user}
-        // Route::put('/users/{id}', [UserManagementController::class, 'update'])->name('users.update'); // {user}
-        // Route::delete('/users/{id}', [UserManagementController::class, 'destroy'])->name('users.destroy'); // {user}
+        // Admin User Management
+        Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [\App\Http\Controllers\Admin\UserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserManagementController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'destroy'])->name('users.destroy');
 
-        Route::post('/users/{id}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.resetPassword'); // {user}
-        Route::post('/users/bulk-action', [UserManagementController::class, 'bulkAction'])->name('users.bulkAction');
-        Route::get('/users/stats/overview', [UserManagementController::class, 'getStats'])->name('users.stats');
-        Route::get('/users/activities/recent', [UserManagementController::class, 'getRecentActivities'])->name('users.activities');
-        Route::post('/users/export', [UserManagementController::class, 'export'])->name('users.export');
-        Route::patch('/users/{id}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggleStatus'); // {user}
-        // generateRandomPassword() hasn't been called
-        // hasPermission() hasn't been called and does no exist yet
-        // logActivity() hasn't been called and does no exist yet
+        Route::post('/users/{user}/reset-password', [\App\Http\Controllers\Admin\UserManagementController::class, 'resetPassword'])->name('users.resetPassword');
+        Route::patch('/users/{user}/toggle-status', [\App\Http\Controllers\Admin\UserManagementController::class, 'toggleStatus'])->name('users.toggleStatus');
     });
 
 
     // HomeController or other generic pages (still protected)
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    // Route::get('/home', [HomeController::class, 'index'])->name('home');
 });

@@ -1,45 +1,38 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div>
-        <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
-            @if (Laravel\Fortify\Features::canUpdateProfileInformation())
-                @livewire('profile.update-profile-information-form')
+@section('title', 'My Profile')
 
-                <x-section-border />
-            @endif
-
-            @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::updatePasswords()))
-                <div class="mt-10 sm:mt-0">
-                    @livewire('profile.update-password-form')
-                </div>
-
-                <x-section-border />
-            @endif
-
-            @if (Laravel\Fortify\Features::canManageTwoFactorAuthentication())
-                <div class="mt-10 sm:mt-0">
-                    @livewire('profile.two-factor-authentication-form')
-                </div>
-
-                <x-section-border />
-            @endif
-
-            <div class="mt-10 sm:mt-0">
-                @livewire('profile.logout-other-browser-sessions-form')
-            </div>
-
-            @if (Laravel\Jetstream\Jetstream::hasAccountDeletionFeatures())
-                <x-section-border />
-
-                <div class="mt-10 sm:mt-0">
-                    @livewire('profile.delete-user-form')
-                </div>
-            @endif
+@section('content')
+<div class="container py-4">
+  <div class="page-inner">
+    <div class="row">
+      {{-- LEFT: profile photo + basic info (UpdateProfileInformationForm contains photo upload) --}}
+      <div class="col-md-4">
+        <div class="mb-3">
+          {{-- This Livewire component includes the photo input + name/email fields --}}
+          @livewire('profile.update-profile-information-form')
         </div>
+      </div>
+
+      {{-- RIGHT: password change, 2FA, sessions, delete --}}
+      <div class="col-md-8">
+        <div class="mb-3">
+          @livewire('profile.update-password-form')
+        </div>
+
+        <div class="mb-3">
+          @livewire('profile.two-factor-authentication-form')
+        </div>
+
+        <div class="mb-3">
+          @livewire('profile.logout-other-browser-sessions-form')
+        </div>
+
+        <div class="mb-3">
+          @livewire('profile.delete-user-form')
+        </div>
+      </div>
     </div>
-</x-app-layout>
+  </div>
+</div>
+@endsection

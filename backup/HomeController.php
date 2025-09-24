@@ -21,15 +21,10 @@ class HomeController extends Controller
                 return redirect()->route('dashboard'); // admin.home
             }
             // barista fallback
-            return redirect()->route('pos.take');
+            return redirect()->route('orders.take');
         }
 
-        // If project still uses static LoginController sessions:
-        if (session('user_role') === 'owner') {
-            return redirect()->route('admin.home');
-        }
-
-        return redirect()->route('pos.take');
+        return redirect()->route('orders.take');
     }
 
         public function clearSession()
