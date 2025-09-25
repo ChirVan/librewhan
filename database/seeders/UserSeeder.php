@@ -35,27 +35,30 @@ class UserSeeder extends Seeder
             User::create([
                 'name' => $name,
                 'email' => $email,
+                'usertype' => 'barista',
                 'email_verified_at' => Carbon::now(), // All emails verified for testing
                 'password' => $commonPassword,
                 'created_at' => Carbon::now()->subDays(rand(1, 30)), // Random creation dates
                 'updated_at' => Carbon::now(),
             ]);
         }
-
+        
         // Create a specific admin user
         User::create([
             'name' => 'Admin Account',
             'email' => 'admin@gmail.com',
+            'usertype' => 'admin',
             'email_verified_at' => Carbon::now(),
             'password' => $commonPassword,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ]);
-
+        
         // Create a specific barista user
         User::create([
             'name' => 'Barista Account',
             'email' => 'barista@gmail.com',
+            'usertype' => 'barista',
             'email_verified_at' => Carbon::now(),
             'password' => $commonPassword,
             'created_at' => Carbon::now(),

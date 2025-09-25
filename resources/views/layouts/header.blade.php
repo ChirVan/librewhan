@@ -216,10 +216,10 @@
               <span class="fw-bold">
                 @if(session('user_role') === 'barista')
                   Barista
-                @elseif(session('user_role') === 'owner')
-                  Owner
+                @elseif(session('user_role') === 'admin')
+                  admin
                 @else
-                  Admin
+                  ROLE NOT SET
                 @endif
               </span>
             </span>
@@ -238,11 +238,11 @@
                   <div class="u-text">
                     <h4>
                       @if(session('user_role') === 'barista')
-                        Barista User
+                        Barista Account
                       @elseif(session('user_role') === 'admin')
-                        Owner/Manager
+                        Admin Account
                       @else
-                        Admin User
+                        ROLE NOT SET
                       @endif
                     </h4>
                     <p class="text-muted">{{ session('user_email', 'admin@gmail.com') }}</p>

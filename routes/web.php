@@ -100,6 +100,7 @@ Route::middleware(['auth'])->group(function () {
             // WITH these specific routes for category management
             Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
             Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+            Route::get('/categories/data', [CategoryController::class,'index'])->name('categories.data'); // THIS WAS GONE BUT IDK WHY, NOW CATEGORY WORKS AGAIN(THIS IS CALLED BY JAVASCRIPT IN products.blade.php)
             Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
             Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
@@ -164,7 +165,8 @@ Route::middleware(['auth'])->group(function () {
 
 
     // Sales & Reports routes (protected)
-    Route::prefix('sales')->name('sales.')->group(function () {
+    // Route::prefix('sales')->name('sales.')->group(function () {
+    Route::middleware(['auth','role:admin'])->prefix('sales')->name('sales.')->group(function () {
         Route::get('/', [SalesReportController::class, 'index'])->name('sms.index'); // when admin logged in, go to sales
         Route::get('/report', [SalesReportController::class, 'index'])->name(name: 'report');
         Route::get('/sms', [SalesReportController::class, 'smsIndex'])->name('sms.index');
@@ -189,9 +191,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/realtime', [SalesReportController::class, 'getRealtimeUpdates'])->name('realtime');
     });
 
-    // User Management (admin-only)
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-
+        
+        // User Management (admin-only)
         Route::resource('users', UserManagementController::class);
         // TODO: resource('users') already registers CRUD routes for users. The individual routes below are duplicates and can be removed later.
         // Admin User Management
@@ -204,6 +206,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('/users/{user}/reset-password', [\App\Http\Controllers\Admin\UserManagementController::class, 'resetPassword'])->name('users.resetPassword');
         Route::patch('/users/{user}/toggle-status', [\App\Http\Controllers\Admin\UserManagementController::class, 'toggleStatus'])->name('users.toggleStatus');
+
+
     });
 
 

@@ -1,0 +1,7 @@
+Results
+
+Option A — Make the bar chart visible (recommended)
+- I took option A, Option B takes a lot of time to load
+
+CONTINUE
+Now that's done, what functionality of Sales MS should we test or create next?

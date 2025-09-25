@@ -4,502 +4,415 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-
-// Mostly static data and placeholders for now
-// In a real application, replace with actual database queries and business logic
+use Illuminate\Support\Facades\DB;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\Category;
 
 class SalesReportController extends Controller
 {
+    /**
+     * Blade pages
+     */
     public function index()
     {
-    return view('sales.report');
+        // Admin dashboard (sales)
+        return view('sales.report');
     }
 
     public function smsIndex()
     {
+        // Sales module main UI (sales SMS)
         return view('sales.sms.index');
     }
 
+    /**
+     * Helper: resolve date range (fallback last 30 days)
+     */
+    protected function resolveRange(Request $request)
+    {
+        $to = $request->input('to_date') ? Carbon::parse($request->input('to_date'))->endOfDay() : Carbon::now()->endOfDay();
+        $from = $request->input('from_date') ? Carbon::parse($request->input('from_date'))->startOfDay() : $to->copy()->subDays(29)->startOfDay();
+        return [$from, $to];
+    }
+
+    /**
+     * Summary numbers: total revenue, orders, avg order, customers (guest name/email not modelled here)
+     */
     public function getSummaryData(Request $request)
     {
-        $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date',
-            'report_type' => 'nullable|in:daily,weekly,monthly,yearly,custom'
-        ]);
+        [$from, $to] = $this->resolveRange($request);
 
-        // In a real application, fetch from database
-        // $summary = Order::whereBetween('created_at', [$fromDate, $toDate])
-        //     ->selectRaw('
-        //         SUM(total_amount) as total_revenue,
-        //         COUNT(*) as total_orders,
-        //         AVG(total_amount) as average_order,
-        //         COUNT(DISTINCT customer_id) as total_customers
-        //     ')->first();
+        $query = Order::whereBetween('created_at', [$from, $to]);
+
+        $summary = $query->selectRaw('
+                COALESCE(SUM(total),0) as total_revenue,
+                COUNT(*) as total_orders,
+                COALESCE(AVG(total),0) as average_order
+            ')->first();
+
+        // Growth vs previous period (same length)
+        $periodDays = $from->diffInDays($to) + 1;
+        $prevTo = $from->copy()->subDay();
+        $prevFrom = $prevTo->copy()->subDays($periodDays - 1);
+
+        $prev = Order::whereBetween('created_at', [$prevFrom->startOfDay(), $prevTo->endOfDay()])
+            ->selectRaw('COALESCE(SUM(total),0) as total_revenue, COUNT(*) as total_orders, COALESCE(AVG(total),0) as average_order')
+            ->first();
+
+        $revenueGrowth = $prev->total_revenue > 0 ? (($summary->total_revenue - $prev->total_revenue) / $prev->total_revenue) * 100 : null;
+        $ordersGrowth = $prev->total_orders > 0 ? (($summary->total_orders - $prev->total_orders) / $prev->total_orders) * 100 : null;
 
         return response()->json([
             'success' => true,
             'summary' => [
-                'total_revenue' => 24580.50,
-                'total_orders' => 1245,
-                'average_order' => 19.75,
-                'total_customers' => 892,
+                'total_revenue' => (float) $summary->total_revenue,
+                'total_orders' => (int) $summary->total_orders,
+                'average_order' => (float) $summary->average_order,
                 'growth' => [
-                    'revenue' => 12.5,
-                    'orders' => 8.3,
-                    'avg_order' => 3.2,
-                    'customers' => 15.7
-                ]
-            ]
+                    'revenue' => $revenueGrowth === null ? null : round($revenueGrowth, 2),
+                    'orders' => $ordersGrowth === null ? null : round($ordersGrowth, 2),
+                ],
+            ],
         ]);
     }
 
+    /**
+     * Trend: daily / weekly / monthly
+     */
     public function getSalesTrend(Request $request)
     {
-        $request->validate([
-            'period' => 'required|in:daily,weekly,monthly',
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date'
-        ]);
-
+        $request->validate(['period' => 'required|in:daily,weekly,monthly']);
         $period = $request->period;
+        [$from, $to] = $this->resolveRange($request);
 
-        // Sample data based on period
-        $trendData = [
-            'daily' => [
-                'labels' => ['Jan 1', 'Jan 2', 'Jan 3', 'Jan 4', 'Jan 5', 'Jan 6', 'Jan 7'],
-                'data' => [850, 920, 1100, 980, 1250, 1380, 1150]
-            ],
-            'weekly' => [
-                'labels' => ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                'data' => [5800, 6200, 7100, 6500]
-            ],
-            'monthly' => [
-                'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                'data' => [24500, 26800, 29200, 27600, 31000, 28900]
-            ]
-        ];
+        if ($period === 'daily') {
+            $rows = Order::whereBetween('created_at', [$from, $to])
+                ->selectRaw("DATE(created_at) as period, COALESCE(SUM(total),0) as total")
+                ->groupBy('period')
+                ->orderBy('period')
+                ->get();
+            $labels = $rows->pluck('period')->map(fn($d) => Carbon::parse($d)->format('M j'))->all();
+            $data = $rows->pluck('total')->map(fn($v) => (float)$v)->all();
+        } elseif ($period === 'weekly') {
+            // use year-week
+            $rows = Order::whereBetween('created_at', [$from, $to])
+                ->selectRaw("YEAR(created_at) as yr, WEEK(created_at, 1) as wk, COALESCE(SUM(total),0) as total")
+                ->groupBy('yr', 'wk')
+                ->orderBy('yr')->orderBy('wk')
+                ->get();
+            $labels = $rows->map(fn($r) => "W{$r->wk}-{$r->yr}")->all();
+            $data = $rows->pluck('total')->map(fn($v) => (float)$v)->all();
+        } else { // monthly
+            $rows = Order::whereBetween('created_at', [$from, $to])
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as period, COALESCE(SUM(total),0) as total")
+                ->groupBy('period')
+                ->orderBy('period')
+                ->get();
+            $labels = $rows->pluck('period')->map(fn($d) => Carbon::parse($d . '-01')->format('M Y'))->all();
+            $data = $rows->pluck('total')->map(fn($v) => (float)$v)->all();
+        }
 
-        return response()->json([
-            'success' => true,
-            'trend' => $trendData[$period] ?? $trendData['daily']
-        ]);
+        return response()->json(['success' => true, 'trend' => ['labels' => $labels, 'data' => $data]]);
     }
 
+    /**
+     * Category performance (sales sum per category)
+     */
     public function getCategoryPerformance(Request $request)
     {
-        $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date'
-        ]);
+        [$from, $to] = $this->resolveRange($request);
 
-        // In a real application:
-        // $categories = OrderItem::join('products', 'order_items.product_id', '=', 'products.id')
-        //     ->join('categories', 'products.category_id', '=', 'categories.id')
-        //     ->whereBetween('order_items.created_at', [$fromDate, $toDate])
-        //     ->groupBy('categories.name')
-        //     ->selectRaw('categories.name, SUM(order_items.quantity * order_items.price) as total_sales')
-        //     ->orderBy('total_sales', 'desc')
-        //     ->get();
+        $rows = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->whereBetween('orders.created_at', [$from, $to])
+            ->groupBy('categories.id', 'categories.name')
+            ->selectRaw('categories.name as category, COALESCE(SUM(order_items.qty * order_items.price),0) as revenue, COUNT(DISTINCT orders.id) as orders_count')
+            ->orderByDesc('revenue')
+            ->get();
 
         return response()->json([
             'success' => true,
             'categories' => [
-                'labels' => ['Coffee', 'Pastry', 'Food', 'Beverage'],
-                'data' => [45, 25, 20, 10],
-                'colors' => ['#8B4513', '#ffc107', '#28a745', '#17a2b8'],
-                'revenue' => [11061.23, 6145.13, 4916.10, 2458.05]
+                'labels' => $rows->pluck('category')->all(),
+                'data' => $rows->pluck('revenue')->map(fn($v) => (float)$v)->all(),
+                'orders' => $rows->pluck('orders_count')->map(fn($v) => (int)$v)->all(),
             ]
         ]);
     }
 
+    /**
+     * Top products by revenue/quantity
+     */
     public function getTopProducts(Request $request)
     {
-        $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date',
-            'limit' => 'nullable|integer|min:1|max:20'
-        ]);
+        $limit = (int) ($request->limit ?? 10);
+        [$from, $to] = $this->resolveRange($request);
 
-        $limit = $request->limit ?? 10;
+        $rows = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->whereBetween('orders.created_at', [$from, $to])
+            ->groupBy('products.id', 'products.name')
+            ->selectRaw('products.id, products.name as name, COALESCE(SUM(order_items.qty * order_items.price),0) as sales, COALESCE(SUM(order_items.qty),0) as quantity')
+            ->orderByDesc('sales')
+            ->limit($limit)
+            ->get();
 
-        // In a real application:
-        // $topProducts = OrderItem::join('products', 'order_items.product_id', '=', 'products.id')
-        //     ->join('categories', 'products.category_id', '=', 'categories.id')
-        //     ->whereBetween('order_items.created_at', [$fromDate, $toDate])
-        //     ->groupBy('products.id', 'products.name', 'categories.name')
-        //     ->selectRaw('
-        //         products.name,
-        //         categories.name as category,
-        //         SUM(order_items.quantity * order_items.price) as total_sales,
-        //         SUM(order_items.quantity) as total_quantity
-        //     ')
-        //     ->orderBy('total_sales', 'desc')
-        //     ->limit($limit)
-        //     ->get();
-
-        return response()->json([
-            'success' => true,
-            'products' => [
-                ['name' => 'Cappuccino', 'category' => 'Coffee', 'sales' => 4250.00, 'quantity' => 185],
-                ['name' => 'Croissant', 'category' => 'Pastry', 'sales' => 2890.50, 'quantity' => 142],
-                ['name' => 'Latte', 'category' => 'Coffee', 'sales' => 3650.75, 'quantity' => 156],
-                ['name' => 'Caesar Salad', 'category' => 'Food', 'sales' => 1980.25, 'quantity' => 89],
-                ['name' => 'Americano', 'category' => 'Coffee', 'sales' => 2340.00, 'quantity' => 98],
-                ['name' => 'Blueberry Muffin', 'category' => 'Pastry', 'sales' => 1650.75, 'quantity' => 75],
-                ['name' => 'Grilled Chicken Sandwich', 'category' => 'Food', 'sales' => 1420.50, 'quantity' => 58],
-                ['name' => 'Iced Coffee', 'category' => 'Beverage', 'sales' => 1280.25, 'quantity' => 64],
-                ['name' => 'Chocolate Cake', 'category' => 'Pastry', 'sales' => 945.00, 'quantity' => 35],
-                ['name' => 'Green Tea', 'category' => 'Beverage', 'sales' => 720.50, 'quantity' => 48]
-            ]
-        ]);
+        return response()->json(['success' => true, 'products' => $rows->map(function($r) {
+            return [
+                'id' => $r->id,
+                'name' => $r->name,
+                'sales' => (float)$r->sales,
+                'quantity' => (int)$r->quantity,
+            ];
+        })->all()]);
     }
 
+    /**
+     * Payments breakdown
+     */
     public function getPaymentMethods(Request $request)
     {
-        $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date'
-        ]);
+        [$from, $to] = $this->resolveRange($request);
 
-        // In a real application:
-        // $paymentMethods = Order::whereBetween('created_at', [$fromDate, $toDate])
-        //     ->groupBy('payment_method')
-        //     ->selectRaw('payment_method, COUNT(*) as count, SUM(total_amount) as total_amount')
-        //     ->get();
+        $rows = Order::whereBetween('created_at', [$from, $to])
+            ->groupBy('payment_mode')
+            ->selectRaw('payment_mode, COUNT(*) as count, COALESCE(SUM(total),0) as amount')
+            ->get();
 
         return response()->json([
             'success' => true,
-            'payment_methods' => [
-                'labels' => ['Cash', 'Card', 'Digital Wallet'],
-                'data' => [40, 45, 15],
-                'colors' => ['#28a745', '#1572e8', '#ffc107'],
-                'amounts' => [9832.20, 11061.23, 3687.08],
-                'counts' => [498, 560, 187]
-            ]
+            'payment_modes' => $rows->map(fn($r) => [
+                'method' => $r->payment_mode,
+                'count' => (int)$r->count,
+                'amount' => (float)$r->amount,
+            ])->values()->all()
         ]);
     }
 
+    /**
+     * Hourly pattern (by hour of day)
+     */
     public function getHourlyPattern(Request $request)
     {
-        $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date'
-        ]);
+        [$from, $to] = $this->resolveRange($request);
 
-        // In a real application:
-        // $hourlyData = Order::whereBetween('created_at', [$fromDate, $toDate])
-        //     ->selectRaw('HOUR(created_at) as hour, COUNT(*) as orders, SUM(total_amount) as revenue')
-        //     ->groupBy('hour')
-        //     ->orderBy('hour')
-        //     ->get();
+        $rows = Order::whereBetween('created_at', [$from, $to])
+            ->selectRaw('HOUR(created_at) as hour, COUNT(*) as orders, COALESCE(SUM(total),0) as revenue')
+            ->groupBy('hour')
+            ->orderBy('hour')
+            ->get();
 
-        return response()->json([
-            'success' => true,
-            'hourly_pattern' => [
-                'labels' => ['6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'],
-                'orders' => [45, 120, 280, 450, 380, 320, 290, 520, 480, 360, 290, 250],
-                'revenue' => [890.50, 2380.40, 5560.80, 8910.50, 7524.60, 6336.80, 5742.20, 10296.40, 9504.80, 7128.60, 5742.50, 4950.25]
-            ]
-        ]);
+        $labels = $rows->pluck('hour')->map(fn($h) => sprintf('%02d:00', $h))->all();
+        $orders = $rows->pluck('orders')->map(fn($v) => (int)$v)->all();
+        $revenue = $rows->pluck('revenue')->map(fn($v) => (float)$v)->all();
+
+        return response()->json(['success' => true, 'hourly_pattern' => ['labels' => $labels, 'orders' => $orders, 'revenue' => $revenue]]);
     }
 
+    /**
+     * Simple customer insights (top customers, new customers, return rate).
+     * Note: you don't have a customers table. We infer by customer_phone or name.
+     */
     public function getCustomerInsights(Request $request)
     {
-        $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date'
-        ]);
+        [$from, $to] = $this->resolveRange($request);
 
-        // In a real application:
-        // $vipCustomers = Customer::whereHas('orders', function($query) use ($fromDate, $toDate) {
-        //     $query->whereBetween('created_at', [$fromDate, $toDate]);
-        // }, '>=', 10)->count();
+        // Top customers by number of orders (group by phone + name)
+        $top = Order::whereBetween('created_at', [$from, $to])
+            ->whereNotNull('customer_phone')
+            ->groupBy('customer_phone')
+            ->selectRaw('customer_phone, COALESCE(COUNT(*),0) as orders, COALESCE(SUM(total),0) as revenue')
+            ->orderByDesc('orders')
+            ->limit(10)
+            ->get();
+
+        // New customers: simple heuristic - first order in time window (requires more complex for real world)
+        $newCustomers = Order::whereBetween('created_at', [$from, $to])
+            ->whereNotNull('customer_phone')
+            ->groupBy('customer_phone')
+            ->havingRaw('MIN(created_at) between ? and ?', [$from, $to])
+            ->get()
+            ->count();
 
         return response()->json([
             'success' => true,
             'insights' => [
-                [
-                    'icon' => 'fas fa-crown',
-                    'title' => 'VIP Customers',
-                    'description' => 'Customers with 10+ orders',
-                    'value' => '127',
-                    'trend' => '+12.5%'
-                ],
-                [
-                    'icon' => 'fas fa-user-plus',
-                    'title' => 'New Customers',
-                    'description' => 'First-time buyers this month',
-                    'value' => '89',
-                    'trend' => '+23.1%'
-                ],
-                [
-                    'icon' => 'fas fa-redo',
-                    'title' => 'Return Rate',
-                    'description' => 'Customer retention percentage',
-                    'value' => '73%',
-                    'trend' => '+2.8%'
-                ],
-                [
-                    'icon' => 'fas fa-star',
-                    'title' => 'Avg Rating',
-                    'description' => 'Customer satisfaction score',
-                    'value' => '4.8',
-                    'trend' => '+0.3'
-                ]
+                'top_customers' => $top->map(fn($r) => ['phone' => $r->customer_phone, 'orders' => (int)$r->orders, 'revenue' => (float)$r->revenue])->all(),
+                'new_customers_count' => $newCustomers,
+                'return_rate_percent' => null // placeholder - compute with customers with multiple orders if desired
             ]
         ]);
     }
 
+    /**
+     * Paginated sales list (for tables)
+     */
     public function getSalesData(Request $request)
     {
         $request->validate([
-            'from_date' => 'nullable|date',
-            'to_date' => 'nullable|date',
-            'category' => 'nullable|string',
-            'payment_method' => 'nullable|string',
             'page' => 'nullable|integer|min:1',
-            'per_page' => 'nullable|integer|min:1|max:100'
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'category' => 'nullable|string',
+            'payment_mode' => 'nullable|string'
         ]);
+
+        $perPage = (int) ($request->per_page ?? 10);
+        $q = Order::with(['items', 'user'])->orderByDesc('created_at');
+
+        if ($request->filled('payment_mode')) {
+            $q->where('payment_mode', $request->payment_mode);
+        }
+
+        if ($request->filled('category')) {
+            // join to limit by category
+            $q->whereHas('items.product.category', function($qq) use ($request) {
+                $qq->where('name', $request->category);
+            });
+        }
 
         $page = $request->page ?? 1;
-        $perPage = $request->per_page ?? 10;
+        $orders = $q->paginate($perPage, ['*'], 'page', $page);
 
-        // In a real application:
-        // $query = Order::with(['customer', 'orderItems.product'])
-        //     ->whereBetween('created_at', [$fromDate, $toDate]);
-        
-        // if ($request->category) {
-        //     $query->whereHas('orderItems.product.category', function($q) use ($request) {
-        //         $q->where('name', $request->category);
-        //     });
-        // }
-        
-        // if ($request->payment_method) {
-        //     $query->where('payment_method', $request->payment_method);
-        // }
-        
-        // $orders = $query->orderBy('created_at', 'desc')
-        //     ->paginate($perPage, ['*'], 'page', $page);
-
-        // Sample data
-        $sampleData = [
-            [
-                'id' => 1,
-                'date' => '2024-01-15 14:30:00',
-                'order_id' => 'ORD-001',
-                'customer' => 'John Doe',
-                'customer_email' => 'john@example.com',
-                'items' => 'Cappuccino, Croissant',
-                'category' => 'Coffee & Pastry',
-                'payment_method' => 'Card',
-                'amount' => 12.50,
-                'status' => 'completed'
-            ],
-            [
-                'id' => 2,
-                'date' => '2024-01-15 15:45:00',
-                'order_id' => 'ORD-002',
-                'customer' => 'Jane Smith',
-                'customer_email' => 'jane@example.com',
-                'items' => 'Latte, Caesar Salad',
-                'category' => 'Coffee & Food',
-                'payment_method' => 'Cash',
-                'amount' => 18.75,
-                'status' => 'completed'
-            ],
-            [
-                'id' => 3,
-                'date' => '2024-01-15 16:20:00',
-                'order_id' => 'ORD-003',
-                'customer' => 'Mike Johnson',
-                'customer_email' => 'mike@example.com',
-                'items' => 'Americano, Blueberry Muffin, Green Tea',
-                'category' => 'Mixed',
-                'payment_method' => 'Digital Wallet',
-                'amount' => 22.25,
-                'status' => 'completed'
-            ],
-            [
-                'id' => 4,
-                'date' => '2024-01-15 17:10:00',
-                'order_id' => 'ORD-004',
-                'customer' => 'Sarah Wilson',
-                'customer_email' => 'sarah@example.com',
-                'items' => 'Iced Coffee, Chocolate Cake',
-                'category' => 'Beverage & Pastry',
-                'payment_method' => 'Card',
-                'amount' => 15.80,
-                'status' => 'completed'
-            ],
-            [
-                'id' => 5,
-                'date' => '2024-01-15 18:35:00',
-                'order_id' => 'ORD-005',
-                'customer' => 'David Brown',
-                'customer_email' => 'david@example.com',
-                'items' => 'Grilled Chicken Sandwich',
-                'category' => 'Food',
-                'payment_method' => 'Cash',
-                'amount' => 24.50,
-                'status' => 'completed'
-            ]
-        ];
+        // map result
+        $data = $orders->map(fn($o) => [
+            'id' => $o->id,
+            'order_number' => $o->order_number,
+            'date' => $o->created_at->toDateTimeString(),
+            'customer' => $o->customer_name,
+            'payment_mode' => $o->payment_mode,
+            'amount' => (float) $o->total,
+            'status' => $o->status,
+            'items' => $o->items->map(fn($it) => [
+                'name' => $it->name,
+                'qty' => $it->qty,
+                'price' => (float) $it->price
+            ])
+        ]);
 
         return response()->json([
             'success' => true,
-            'data' => $sampleData,
+            'data' => $data,
             'pagination' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => 245, // Total records
-                'last_page' => ceil(245 / $perPage),
-                'from' => ($page - 1) * $perPage + 1,
-                'to' => min($page * $perPage, 245)
+                'current_page' => $orders->currentPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+                'last_page' => $orders->lastPage(),
             ]
         ]);
     }
 
-    public function generateReport(Request $request)
-    {
-        $request->validate([
-            'report_type' => 'required|in:daily,weekly,monthly,yearly,custom',
-            'from_date' => 'required|date',
-            'to_date' => 'required|date',
-            'category' => 'nullable|string',
-            'payment_method' => 'nullable|string',
-            'format' => 'nullable|in:pdf,excel,csv'
-        ]);
-
-        $format = $request->format ?? 'pdf';
-        $reportType = $request->report_type;
-
-        // In a real application, generate actual report
-        // switch($format) {
-        //     case 'pdf':
-        //         return $this->generatePdfReport($request);
-        //     case 'excel':
-        //         return $this->generateExcelReport($request);
-        //     case 'csv':
-        //         return $this->generateCsvReport($request);
-        // }
-
-        return response()->json([
-            'success' => true,
-            'message' => "Report generated successfully in {$format} format",
-            'report_type' => $reportType,
-            'download_url' => "/reports/sales-{$reportType}-" . now()->format('Y-m-d') . ".{$format}",
-            'file_name' => "sales-{$reportType}-" . now()->format('Y-m-d') . ".{$format}"
-        ]);
-    }
-
-    public function exportData(Request $request)
-    {
-        $request->validate([
-            'format' => 'required|in:excel,csv,pdf',
-            'include_summary' => 'boolean',
-            'include_charts' => 'boolean',
-            'include_details' => 'boolean',
-            'email_to' => 'nullable|email'
-        ]);
-
-        $format = $request->format;
-        $fileName = 'sales-report-' . now()->format('Y-m-d-H-i-s') . '.' . $format;
-
-        // In a real application, generate and return file
-        // if ($request->email_to) {
-        //     Mail::to($request->email_to)->send(new SalesReportMail($fileName));
-        // }
-
-        return response()->json([
-            'success' => true,
-            'message' => "Report exported successfully in {$format} format",
-            'file_name' => $fileName,
-            'download_url' => "/downloads/reports/{$fileName}",
-            'email_sent' => $request->email_to ? true : false
-        ]);
-    }
-
+    /**
+     * Get order details (existing)
+     */
     public function getOrderDetails($orderId)
     {
-        // In a real application:
-        // $order = Order::with(['customer', 'orderItems.product'])
-        //     ->findOrFail($orderId);
+        $order = Order::with(['items.product', 'user'])->findOrFail($orderId);
 
         return response()->json([
             'success' => true,
             'order' => [
-                'id' => $orderId,
-                'order_number' => 'ORD-' . str_pad($orderId, 3, '0', STR_PAD_LEFT),
-                'date' => '2024-01-15 14:30:00',
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'date' => $order->created_at->toDateTimeString(),
                 'customer' => [
-                    'name' => 'John Doe',
-                    'email' => 'john@example.com',
-                    'phone' => '+1234567890'
+                    'name' => $order->customer_name,
+                    'phone' => $order->customer_phone,
                 ],
-                'items' => [
-                    [
-                        'name' => 'Cappuccino',
-                        'quantity' => 1,
-                        'price' => 4.50,
-                        'total' => 4.50
-                    ],
-                    [
-                        'name' => 'Croissant',
-                        'quantity' => 2,
-                        'price' => 4.00,
-                        'total' => 8.00
-                    ]
-                ],
-                'subtotal' => 12.50,
-                'tax' => 1.25,
-                'total' => 13.75,
-                'payment_method' => 'Card',
-                'status' => 'completed'
+                'items' => $order->items->map(fn($it) => [
+                    'name' => $it->name,
+                    'product_id' => $it->product_id,
+                    'quantity' => (int)$it->qty,
+                    'price' => (float)$it->price,
+                    'total' => (float)($it->qty * $it->price),
+                ]),
+                'subtotal' => (float)$order->subtotal,
+                'tax' => (float)$order->tax_amount,
+                'discount' => (float)$order->discount_amount,
+                'total' => (float)$order->total,
+                'payment_mode' => $order->payment_mode,
+                'status' => $order->status,
+                'user' => $order->user ? $order->user->name : null,
             ]
         ]);
     }
 
-    public function printReceipt($orderId)
+    /**
+     * Print receipt: returns a Blade view for printing in browser (or JSON if requested)
+     * Existing route: POST /sales/orders/{id}/print - we accept both POST and GET for convenience.
+     */
+    public function printReceipt(Request $request, $orderId)
     {
-        // In a real application, generate receipt
-        return response()->json([
-            'success' => true,
-            'message' => 'Receipt sent to printer',
-            'order_id' => $orderId,
-            'receipt_number' => 'RCP-' . time()
-        ]);
+        $order = Order::with(['items.product', 'user'])->findOrFail($orderId);
+
+        // If the request expects JSON, return the order data
+        if ($request->wantsJson() || $request->isJson()) {
+            return $this->getOrderDetails($orderId);
+        }
+
+        // Otherwise return a Blade view printable receipt
+        return view('sales.receipt', compact('order'));
     }
 
+    /**
+     * Dashboard stats quick endpoint
+     */
     public function getDashboardStats()
     {
-        // Quick stats for dashboard widgets
+        $today = Carbon::today();
+        $yesterday = $today->copy()->subDay();
+
+        $todaySales = Order::whereDate('created_at', $today)->sum('total');
+        $todayOrders = Order::whereDate('created_at', $today)->count();
+        $yesterdaySales = Order::whereDate('created_at', $yesterday)->sum('total');
+        $yesterdayOrders = Order::whereDate('created_at', $yesterday)->count();
+        $monthlySales = Order::whereYear('created_at', $today->year)->whereMonth('created_at', $today->month)->sum('total');
+        $monthlyOrders = Order::whereYear('created_at', $today->year)->whereMonth('created_at', $today->month)->count();
+
+        $topProduct = DB::table('order_items')
+            ->join('products','order_items.product_id','=','products.id')
+            ->join('orders','order_items.order_id','=','orders.id')
+            ->whereBetween('orders.created_at', [$today->startOfDay(), $today->endOfDay()])
+            ->selectRaw('products.name, SUM(order_items.qty) as qty')
+            ->groupBy('products.name')
+            ->orderByDesc('qty')
+            ->limit(1)
+            ->first();
+
         return response()->json([
             'success' => true,
             'stats' => [
-                'today_sales' => 1580.50,
-                'today_orders' => 67,
-                'yesterday_sales' => 1420.25,
-                'yesterday_orders' => 58,
-                'monthly_sales' => 24580.50,
-                'monthly_orders' => 1245,
-                'top_product_today' => 'Cappuccino',
-                'peak_hour_today' => '2:00 PM'
+                'today_sales' => (float)$todaySales,
+                'today_orders' => (int)$todayOrders,
+                'yesterday_sales' => (float)$yesterdaySales,
+                'yesterday_orders' => (int)$yesterdayOrders,
+                'monthly_sales' => (float)$monthlySales,
+                'monthly_orders' => (int)$monthlyOrders,
+                'top_product_today' => $topProduct ? $topProduct->name : null,
+                'peak_hour_today' => null,
             ]
         ]);
     }
 
+    /**
+     * Realtime updates (simple)
+     */
     public function getRealtimeUpdates()
     {
-        // For real-time dashboard updates
+        $lastOrder = Order::latest()->first();
+        $ordersLastHour = Order::where('created_at', '>=', now()->subHour())->count();
+        $revenueLastHour = Order::where('created_at', '>=', now()->subHour())->sum('total');
+
         return response()->json([
             'success' => true,
             'updates' => [
-                'last_order_time' => now()->subMinutes(3)->toISOString(),
-                'orders_last_hour' => 12,
-                'revenue_last_hour' => 245.75,
-                'active_customers' => 8,
-                'pending_orders' => 3
+                'last_order_time' => $lastOrder ? $lastOrder->created_at->toISOString() : null,
+                'orders_last_hour' => (int)$ordersLastHour,
+                'revenue_last_hour' => (float)$revenueLastHour,
             ]
         ]);
     }
