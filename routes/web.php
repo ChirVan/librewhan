@@ -47,9 +47,16 @@ use App\Http\Controllers\Admin\UserManagementController;
 | 
 |------------------------------
 */
+/* 
+| Redirect to login when no route is specified
+*/
 Route::get('/', function () {
     return redirect()->route('login');
 })->name('root');
+
+// Receipt Page for SMS
+Route::middleware(['auth','role:admin'])->get('/sales/receipt/{order}', [\App\Http\Controllers\SalesReportController::class, 'receiptView'])->name('sales.receipt');
+
 
 /*
 |------------------------------
@@ -161,6 +168,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/orders/{id}/complete', [OrderController::class, 'complete'])->name('orders.complete'); // {order}
 
         // Note: product API endpoints are under inventory/api/products above
+
+        // Sales API endpoints
+        Route::get('/sales/api/summary', [SalesReportController::class, 'apiSummary'])->name('sales.api.summary');
+        Route::get('/sales/api/top-products', [SalesReportController::class, 'apiTopProducts'])->name('sales.api.topProducts');
     });
 
 

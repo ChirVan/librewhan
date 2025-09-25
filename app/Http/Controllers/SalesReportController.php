@@ -416,4 +416,83 @@ class SalesReportController extends Controller
             ]
         ]);
     }
+
+    public function receiptView(Order $order)
+    {
+        $order->load('items'); // eager load items
+        return view('sales.receipt', compact('order'));
+    }
+
+    public function summaryForRange($from = null, $to = null)
+    {
+        $from = $from ? Carbon::parse($from)->startOfDay() : Carbon::today()->startOfDay();
+        $to = $to ? Carbon::parse($to)->endOfDay() : Carbon::today()->endOfDay();
+
+        $totalRevenue = Order::whereBetween('created_at', [$from, $to])->sum('total');
+        $totalOrders = Order::whereBetween('created_at', [$from, $to])->count();
+        $avgOrder = $totalOrders ? $totalRevenue / $totalOrders : 0;
+
+        return [
+            'total_revenue' => $totalRevenue,
+            'total_orders' => $totalOrders,
+            'average_order' => round($avgOrder, 2),
+        ];
+    }
+
+    public function topProducts($from = null, $to = null, $limit = 10)
+    {
+        $from = $from ? Carbon::parse($from)->startOfDay() : Carbon::today()->startOfDay();
+        $to = $to ? Carbon::parse($to)->endOfDay() : Carbon::today()->endOfDay();
+
+        return OrderItem::select('name', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(price * qty) as total_sales'))
+            ->whereHas('order', function($q) use ($from, $to) {
+                $q->whereBetween('created_at', [$from, $to]);
+            })
+            ->groupBy('name')
+            ->orderByDesc('total_sales')
+            ->limit($limit)
+            ->get();
+    }
+
+    
+
+// returns simple summary for given date range (query params: from,to)
+public function apiSummary(Request $request)
+{
+    $from = $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : Carbon::today()->startOfDay();
+    $to = $request->query('to') ? Carbon::parse($request->query('to'))->endOfDay() : Carbon::today()->endOfDay();
+
+    $totalRevenue = \App\Models\Order::whereBetween('created_at', [$from, $to])->sum('total');
+    $totalOrders = \App\Models\Order::whereBetween('created_at', [$from, $to])->count();
+    $avgOrder = $totalOrders ? $totalRevenue / $totalOrders : 0;
+
+    return response()->json([
+        'success' => true,
+        'summary' => [
+            'total_revenue' => round($totalRevenue, 2),
+            'total_orders' => $totalOrders,
+            'average_order' => round($avgOrder, 2),
+        ]
+    ]);
+}
+
+// returns top products for given date range (query params: from,to,limit)
+public function apiTopProducts(Request $request)
+{
+    $from = $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : Carbon::today()->startOfDay();
+    $to = $request->query('to') ? Carbon::parse($request->query('to'))->endOfDay() : Carbon::today()->endOfDay();
+    $limit = (int) $request->query('limit', 8);
+
+    $products = OrderItem::select('name', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(price * qty) as total_sales'))
+        ->whereHas('order', function($q) use ($from, $to) {
+            $q->whereBetween('created_at', [$from, $to]);
+        })
+        ->groupBy('name')
+        ->orderByDesc('total_sales')
+        ->limit($limit)
+        ->get();
+
+    return response()->json(['success' => true, 'products' => $products]);
+}
+
 }

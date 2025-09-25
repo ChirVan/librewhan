@@ -26,16 +26,26 @@ class UserSeeder extends Seeder
             'Joshua Harris', 'Melissa Clark', 'Andrew Lewis', 'Kimberly Walker'
         ];
 
+        $i = 0;
         // Create 20 test users
         foreach ($names as $index => $name) {
             // Generate email based on name
             $emailName = strtolower(str_replace(' ', '.', $name));
             $email = $emailName . '@gmail.com';
+            
+            // Classic Looping, if $i is even = barista, odd = admin
+            $i++;
+            $usertype = 'barista';
+            if($i % 2 == 0){
+                $usertype = 'barista';                
+            }else{
+                $usertype = 'admin';
+            }
 
             User::create([
                 'name' => $name,
                 'email' => $email,
-                'usertype' => 'barista',
+                'usertype' => $usertype,
                 'email_verified_at' => Carbon::now(), // All emails verified for testing
                 'password' => $commonPassword,
                 'created_at' => Carbon::now()->subDays(rand(1, 30)), // Random creation dates

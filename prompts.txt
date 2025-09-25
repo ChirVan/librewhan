@@ -1,7 +1,16 @@
-Results
+1) Replace OrderController::store (fixed auth()->id() and robust)
+- done
 
-Option A — Make the bar chart visible (recommended)
-- I took option A, Option B takes a lot of time to load
+2) Two API endpoints to power the report page
+- done
+- done
 
-CONTINUE
-Now that's done, what functionality of Sales MS should we test or create next?
+3) Minimal JS to wire summary + top products into the report page
+- done, haven't seen any changes yet since I don't have a database to put datas in, how about let's make a database for it? as well as it supports the functionality you provided to me and connects to inventory
+
+4) PARSE ERROR (Parse error... vendor\psy\psysh...) — what happened & how to test safely
+- no need to do this
+
+ISSUE
+I have discovered some issues
+

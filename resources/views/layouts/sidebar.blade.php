@@ -30,6 +30,20 @@
         @endphp
 
         {{-- @if($workspaceRole === 'inventory') --}}
+          @if($isAdmin)
+          <li class="nav-section">
+            <span class="sidebar-mini-icon">
+              <i class="fa fa-ellipsis-h"></i>
+            </span>
+            <h4 class="text-section">Admin Dashboard</h4>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('dashboard') }}">
+              <i class="fas fa-clipboard-list"></i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+          @endif
           <li class="nav-section">
             <span class="sidebar-mini-icon">
               <i class="fa fa-ellipsis-h"></i>
@@ -77,11 +91,6 @@
             <div class="collapse" id="inventorySubmenu">
               <ul class="nav nav-collapse">
                 <li>
-                  <a href="{{ route('dashboard') }}">
-                    <span class="sub-item">Dashboard</span>
-                  </a>
-                </li>
-                <li>
                   <a href="{{ route('inventory.products.index') }}">
                     <span class="sub-item">Products</span>
                   </a>
@@ -116,13 +125,8 @@
               <div class="collapse" id="reports">
                 <ul class="nav nav-collapse">
                   <li>
-                    <a href="{{ route('dashboard') }}"> {{-- same as inventory dashboard lmao --}}
-                      <span class="sub-item">Dashboard</span>
-                    </a>
-                  </li>
-                  <li>
                     <a href="{{ route('sales.report') }}">
-                      <span class="sub-item">Total Sales</span>
+                      <span class="sub-item">Reports & Analytics</span>
                     </a>
                   </li>
                 </ul>

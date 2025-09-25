@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allCategories = catRes.data.filter(c => c.status === 'active').map(c => c.name);
         allProducts = prodRes.data;
         renderCategoryFilters();
-        renderProductsGrid('Coffee'); // Default to Coffee
+        renderProductsGrid('All'); // Default to Coffee
         bindCategoryFilterEvents();
     });
 

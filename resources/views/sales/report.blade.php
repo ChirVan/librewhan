@@ -692,4 +692,67 @@ document.addEventListener('DOMContentLoaded', function() {
     window.printReceipt = function(orderId) { fetch("{{ url('sales') }}/orders/" + orderId + "/print", { method:'POST', headers:{'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')} }).then(r=>r.json()).then(j=>alert(j.message)); };
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    async function fetchSummary(from, to) {
+        const q = new URLSearchParams();
+        if (from) q.set('from', from);
+        if (to) q.set('to', to);
+        const res = await fetch(`/sales/api/summary?${q.toString()}`, { headers: { 'Accept': 'application/json' }});
+        if (!res.ok) return null;
+        return await res.json();
+    }
+
+    async function fetchTopProducts(from, to, limit=5) {
+        const q = new URLSearchParams();
+        if (from) q.set('from', from);
+        if (to) q.set('to', to);
+        if (limit) q.set('limit', limit);
+        const res = await fetch(`/sales/api/top-products?${q.toString()}`, { headers: { 'Accept': 'application/json' }});
+        if (!res.ok) return null;
+        return await res.json();
+    }
+
+    async function refreshReportData() {
+        // use the date inputs on the page, if present
+        const from = document.getElementById('fromDate')?.value || null;
+        const to = document.getElementById('toDate')?.value || null;
+
+        const sumResp = await fetchSummary(from, to);
+        if (sumResp && sumResp.success) {
+            document.getElementById('totalRevenue').textContent = `$${sumResp.summary.total_revenue.toLocaleString()}`;
+            document.getElementById('totalOrders').textContent = sumResp.summary.total_orders.toLocaleString();
+            document.getElementById('averageOrder').textContent = `$${sumResp.summary.average_order}`;
+        }
+
+        const topResp = await fetchTopProducts(from, to, 5);
+        if (topResp && topResp.success) {
+            const container = document.getElementById('topProductsList');
+            container.innerHTML = topResp.products.map((p, i) => `
+                <div class="product-item">
+                    <div class="product-info">
+                        <div class="product-name">${i+1}. ${p.name}</div>
+                        <div class="product-category">—</div>
+                    </div>
+                    <div class="product-stats">
+                        <div class="product-sales">$${Number(p.total_sales).toFixed(2)}</div>
+                        <div class="product-quantity">${p.total_qty} sold</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    // run on load
+    refreshReportData();
+
+    // bind to generate/refresh buttons if present
+    document.getElementById('generateReportBtn')?.addEventListener('click', function () {
+        refreshReportData();
+    });
+    document.getElementById('refreshBtn')?.addEventListener('click', function () {
+        refreshReportData();
+    });
+});
+</script>
 @endpush
