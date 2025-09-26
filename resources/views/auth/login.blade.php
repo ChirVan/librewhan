@@ -140,12 +140,12 @@
         </div>
       </div>
 
-      <div style="margin-top:18px">
+      {{-- <div style="margin-top:18px">
         <div class="demo-credentials">
           <strong>Demo Access</strong>
           <div style="font-size:13px">Email: <code>admin@gmail.com</code> | Password: <code>12345678</code></div>
         </div>
-      </div>
+      </div> --}}
     </div>
 
     <!-- RIGHT: login form -->

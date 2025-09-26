@@ -1,16 +1,2 @@
-1) Replace OrderController::store (fixed auth()->id() and robust)
-- done
-
-2) Two API endpoints to power the report page
-- done
-- done
-
-3) Minimal JS to wire summary + top products into the report page
-- done, haven't seen any changes yet since I don't have a database to put datas in, how about let's make a database for it? as well as it supports the functionality you provided to me and connects to inventory
-
-4) PARSE ERROR (Parse error... vendor\psy\psysh...) — what happened & how to test safely
-- no need to do this
-
-ISSUE
-I have discovered some issues
+Results
 

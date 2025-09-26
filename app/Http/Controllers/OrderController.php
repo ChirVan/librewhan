@@ -17,7 +17,7 @@ class OrderController extends Controller
     $validated = $request->validate([
         'customer_name' => 'nullable|string|max:255',
         'customer_phone' => 'nullable|string|max:255',
-        'payment_mode' => 'required|string',           // <-- matches your DB
+        'payment_mode' => 'required|string',
         'subtotal' => 'nullable|numeric|min:0',
         'total' => 'nullable|numeric|min:0',
         'amount_paid' => 'nullable|numeric|min:0',
@@ -52,7 +52,7 @@ class OrderController extends Controller
             $subtotal = $validated['subtotal'] ?? $computedSubtotal;
             $total = $validated['total'] ?? $subtotal; // taxes/discounts can be applied later
 
-            $order = \App\Models\Order::create([
+            $order = Order::create([
                 'order_number' => 'ORD-' . strtoupper(uniqid()),
                 'customer_name' => $validated['customer_name'] ?? null,
                 'order_type' => $validated['order_type'] ?? null,

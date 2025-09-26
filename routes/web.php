@@ -71,6 +71,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Order management routes (barista + admin)
     Route::middleware('role:admin|barista')->prefix('orders')->name('orders.')->group(function () {
+        Route::post('/', [OrderController::class,'store'])->name('orders.store');
         Route::get('/pending', [OrderController::class, 'pending'])->name('pending'); // pending() does not exist yet
         Route::get('/take', [OrderController::class, 'take'])->name('take');
         Route::get('/manage', [OrderController::class, 'manage'])->name('manage'); // manage() does not exist yet
@@ -93,7 +94,8 @@ Route::middleware(['auth'])->group(function () {
             // ADD THIS LINE - Categories page route
             Route::get('/categories', [CategoryController::class, 'indexPage'])->name('categories.index');
         });
-
+        
+        Route::get('/categories/data', [CategoryController::class,'index'])->name('categories.data'); // THIS WAS GONE BUT IDK WHY, NOW CATEGORY WORKS AGAIN(THIS IS CALLED BY JAVASCRIPT IN products.blade.php)
         // Admin-only Products Management
         Route::middleware('role:admin')->group(function () {
             Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -107,7 +109,6 @@ Route::middleware(['auth'])->group(function () {
             // WITH these specific routes for category management
             Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
             Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-            Route::get('/categories/data', [CategoryController::class,'index'])->name('categories.data'); // THIS WAS GONE BUT IDK WHY, NOW CATEGORY WORKS AGAIN(THIS IS CALLED BY JAVASCRIPT IN products.blade.php)
             Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
             Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');

@@ -10,20 +10,6 @@
         <div class="page-header">
             <h3 class="fw-bold mb-3">Order Management</h3>
             <ul class="breadcrumbs mb-3">
-                <li class="nav-home">
-                    <a href="{{ route('dashboard') }}">
-                        <i class="icon-home"></i>
-                    </a>
-                </li>
-                <li class="separator">
-                    <i class="icon-arrow-right"></i>
-                </li>
-                <li class="nav-item">
-                    <a href="#">Orders</a>
-                </li>
-                <li class="separator">
-                    <i class="icon-arrow-right"></i>
-                </li>
                 <li class="nav-item">
                     <a href="#">Take New Order</a>
                 </li>
@@ -55,7 +41,7 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Current Orderss</h4>
+                        <h4 class="card-title">My Cart</h4>
                     </div>
                     <div class="card-body">
                         <!-- Customer Info -->
@@ -624,7 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allCategories = catRes.data.filter(c => c.status === 'active').map(c => c.name);
         allProducts = prodRes.data;
         renderCategoryFilters();
-        renderProductsGrid('All'); // Default to Coffee
+        renderProductsGrid('All'); // All Default
         bindCategoryFilterEvents();
     });
 
@@ -964,7 +950,7 @@ document.addEventListener('DOMContentLoaded', function() {
             qty: item.qty
         }));
         try {
-            const response = await fetch('/pos/orders', {
+            const response = await fetch('/orders', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
