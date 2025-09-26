@@ -93,9 +93,15 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
             // ADD THIS LINE - Categories page route
             Route::get('/categories', [CategoryController::class, 'indexPage'])->name('categories.index');
+            Route::get('/_meta/categories', [ProductController::class, 'metaCategories'])->name('metaCategories');
+
+            Route::get('/stock', [StockController::class,'index'])->name('stock'); // RECOVERED FROM BACKUP
+            Route::get('/stock/alerts', [StockController::class, 'alerts'])->name('stock.alerts'); // RECOVERED FROM BACKUP
+            Route::get('/stock/history', [StockController::class, 'history'])->name('stock.history'); // RECOVERED FROM BACKUP
+            Route::put('/stock/{id}', [StockController::class, 'update'])->name('stock.update'); // RECOVERED FROM BACKUP
         });
         
-        Route::get('/categories/data', [CategoryController::class,'index'])->name('categories.data'); // THIS WAS GONE BUT IDK WHY, NOW CATEGORY WORKS AGAIN(THIS IS CALLED BY JAVASCRIPT IN products.blade.php)
+        Route::get('/categories/data', [CategoryController::class,'index'])->name('categories.data'); // RECOVERED FROM BACKUP, THIS IS CALLED BY JAVASCRIPT IN products.blade.php
         // Admin-only Products Management
         Route::middleware('role:admin')->group(function () {
             Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -128,7 +134,8 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
             Route::patch('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggle');
             Route::patch('/{product}/stock', [ProductController::class, 'updateStock'])->name('stock');
-            Route::get('/_meta/categories', [ProductController::class, 'metaCategories'])->name('metaCategories');
+
+            Route::get('/_meta/categories', [ProductController::class,'metaCategories'])->name('metaCategories'); // ANOTHER LOST ONE
         });
     });
 

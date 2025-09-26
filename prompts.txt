@@ -1,2 +1,10 @@
 Results
 
+Drop-in script — replace the current SMS/Cart scripts in takeOrder.blade.php with this whole block
+- done
+
+Dashboard Recent Orders "Items" fix (small improvement)
+- done, it's working
+
+Let's continue making takeOrders.blade.php functional with Javascript
+- Now if you remember, I provided you the product details

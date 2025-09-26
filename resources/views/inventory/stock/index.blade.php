@@ -170,7 +170,7 @@
                                                             </div>
                                                             <div class="mb-3">
                                                                 <label for="reason{{ $product->id }}" class="form-label">Reason</label>
-                                                                <input type="text" class="form-control" name="reason" id="reason{{ $product->id }}" maxlength="255" required>
+                                                                <input type="text" class="form-control" name="reason" id="reason{{ $product->id }}" maxlength="255">
                                                             </div>
                                                         </div>
                                                         <div class="modal-footer">

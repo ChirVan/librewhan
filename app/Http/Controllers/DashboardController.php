@@ -24,9 +24,9 @@ class DashboardController extends Controller
      */
     public function smsIndex()
     {
-    // Always update workspace session when switching
-    session(['workspace_role' => 'sms']);
-    return view('dashboard.index');
+        // Always update workspace session when switching
+        session(['workspace_role' => 'sms']);
+        return view('dashboard.index');
     }
     
     /**
@@ -37,8 +37,8 @@ class DashboardController extends Controller
      */
     public function inventoryIndex()
     {
-    // Always update workspace session when switching
-    session(['workspace_role' => 'inventory']);
-    return view('dashboard.index');
+        // Always update workspace session when switching
+        session(['workspace_role' => 'inventory']);
+        return view('dashboard.index');
     }
 }

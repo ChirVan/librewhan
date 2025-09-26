@@ -17,17 +17,13 @@ class UserSeeder extends Seeder
         // Common password for all test users
         $commonPassword = Hash::make('12345678');
 
-        // Array of realistic names for variety
         $names = [
-            'John Doe', 'Jane Smith', 'Michael Johnson', 'Sarah Wilson',
-            'David Brown', 'Emily Davis', 'Robert Miller', 'Lisa Garcia',
-            'William Rodriguez', 'Jessica Martinez', 'James Anderson', 'Ashley Taylor',
-            'Christopher Thomas', 'Amanda Jackson', 'Matthew White', 'Jennifer Lopez',
-            'Joshua Harris', 'Melissa Clark', 'Andrew Lewis', 'Kimberly Walker'
+            'Chester Dapatnapo', 'Rolando Dela Pena', 'Ivan Bullo', 'Kent Ancheta',
+            'Ivan Dela Pena', 'Nicole Pedroso', 'Jhon Bolivar', 'Via Jeves',
+            'Trishia Del Norte', 'Agrifino Dacles',
         ];
 
         $i = 0;
-        // Create 20 test users
         foreach ($names as $index => $name) {
             // Generate email based on name
             $emailName = strtolower(str_replace(' ', '.', $name));

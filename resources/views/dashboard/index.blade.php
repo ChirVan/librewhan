@@ -212,12 +212,27 @@
       const json = await res.json();
       const rows = json.data ?? json;
       const tbody = document.getElementById('recentOrdersBody');
-      tbody.innerHTML = (rows || []).slice(0,5).map(r => `<tr>
-        <td>${r.order_id ?? r.order_number ?? 'ORD-'+(r.id||'')}</td>
-        <td>${r.customer ?? r.customer_name ?? ''}</td>
-        <td>${(r.items || r.items_list || r.items_text) || ''}</td>
-        <td>₱ ${Number(r.amount ?? r.total ?? 0).toLocaleString()}</td>
-      </tr>`).join('');
+      tbody.innerHTML = (rows || []).slice(0,5).map(r => {
+        // try to build readable items string
+        let itemsText = '';
+        if (Array.isArray(r.items)) {
+          itemsText = r.items.map(it => it.name ?? it.item_name ?? (typeof it === 'string' ? it : '')).join(', ');
+        } else if (typeof r.items === 'string') {
+          itemsText = r.items;
+        } else if (r.items && typeof r.items === 'object') {
+          // maybe items_list or items_text fields
+          itemsText = (r.items_list || r.items_text || JSON.stringify(r.items)).toString();
+        } else {
+          itemsText = '';
+        }
+        return `<tr>
+          <td>${r.order_id ?? r.order_number ?? 'ORD-'+(r.id||'')}</td>
+          <td>${r.customer ?? r.customer_name ?? ''}</td>
+          <td>${itemsText}</td>
+          <td>₱ ${Number(r.amount ?? r.total ?? 0).toLocaleString()}</td>
+        </tr>`;
+      }).join('');
+
     } catch (err) {
       console.warn('No recent orders or failed to fetch', err);
     }

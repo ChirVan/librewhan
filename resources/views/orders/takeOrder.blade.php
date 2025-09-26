@@ -263,7 +263,7 @@
     </div>
 </div>
 
-<!-- Custom CSS for POS -->
+<!-- Custom CSS for SMS -->
 <style>
 .product-card {
     cursor: pointer;
@@ -438,557 +438,468 @@
 }
 </style>
 
-<!-- POS JavaScript (same as before) -->
+<!-- SMS JavaScript  -->
+{{-- 
+|
+| This Javascript functions as a temporary Order Creation System,
+| when submitted, it will pass it to PHP to officially process the order
+|
+--}}
 <script>
-// POS dynamic fetch and render
+/*
+  Unified SMS / Order-taking script for takeOrder.blade.php
+  - Matches your blade container IDs.
+  - Replaces the previous two script blocks in the page.
+  - Expects meta csrf token in layout: <meta name="csrf-token" content="{{ csrf_token() }}">
+*/
 
-const productsApiUrl = "{{ url('/inventory/api/products') }}";
-// Use a fallback or static endpoint for categories if route is missing
-const categoriesApiUrl = "/inventory/categories/data";
+(function () {
+  const productsApiUrl = "{{ url('/inventory/api/products') }}";
+  const categoriesApiUrl = "{{ url('/inventory/api/products/_meta/categories') }}";
 
-let allProducts = [];
-let allCategories = [];
+  // DOM refs (match your blade)
+  const $categoryFilters = document.getElementById('category-filters');
+  const $productsGrid = document.getElementById('products-grid');
+  const $cartEmpty = document.getElementById('cart-empty');
+  const $cartItemsContainer = document.getElementById('cart-items');
+  const $subtotalEl = document.getElementById('subtotal');
+  const $totalEl = document.getElementById('total');
+  const $customerPayment = document.getElementById('customerPayment');
+  const $processOrderBtn = document.getElementById('process-order');
+  const $confirmCustomizationBtn = document.getElementById('confirmCustomization');
+  const $customizationModalElem = document.getElementById('customizationModal');
 
-// Make openCustomizationModal globally accessible
-window.openCustomizationModal = function(product) {
-    // Debug: log the category value
-    console.log('Product category:', product.category);
-    currentProduct = product;
-    document.getElementById('selectedProduct').textContent = product.name;
-    const basePriceDisplay = document.getElementById('basePriceDisplay');
-    const iconElement = document.getElementById('productIcon');
-    // Always reset all modal sections to hidden first
-    basePriceDisplay.style.display = 'none';
-    document.getElementById('sizeOptions').style.display = 'none';
-    document.getElementById('sugarOptions').style.display = 'none';
-    document.getElementById('iceOptions').style.display = 'none';
-    document.getElementById('milkOptions').style.display = 'none';
-    document.getElementById('toppingsOptions').style.display = 'none';
+  if (!($categoryFilters && $productsGrid && $cartEmpty && $cartItemsContainer && $subtotalEl && $totalEl && $processOrderBtn && $confirmCustomizationBtn)) {
+    console.warn('SMS: Required containers missing. Check category-filters, products-grid, cart-empty, cart-items, subtotal, total, process-order, confirmCustomization.');
+    // still continue to try (but won't function fully)
+  }
 
+  let allCategories = [];
+  let allProducts = [];
+  let currentProduct = null; // product object used by modal
+  let cart = []; // array of items { product_id, name, qty, size, toppings, price (unit), total }
 
-    // Normalize category for comparison
-    const cat = (product.category || '').toLowerCase();
+  /* --------- utilities --------- */
+  function safeCategoryName(c) {
+    if (!c) return '';
+    if (typeof c === 'string') return c;
+    return c.name || c.title || String(c.id || '');
+  }
 
-    // Set icon
-    if (cat.includes('coffee')) {
-        iconElement.className = 'fas fa-coffee fa-2x text-brown me-3';
-    } else if (cat === 'pastry') {
-        iconElement.className = 'fas fa-cookie-bite fa-2x text-warning me-3';
-    } else if (cat === 'food') {
-        iconElement.className = 'fas fa-hamburger fa-2x text-success me-3';
-    } else if (cat === 'snacks') {
-        iconElement.className = 'fas fa-utensils fa-2x text-muted me-3';
-    } else {
-        iconElement.className = 'fas fa-utensils fa-2x text-muted me-3';
+  function parsePriceTiersFromDescription(desc) {
+    if (!desc) return [];
+    const nums = String(desc).match(/(\d+(?:\.\d+)?)/g);
+    if (!nums) return [];
+    return nums.map(n => Number(n));
+  }
+
+  function currency(n) {
+    if (isNaN(n)) return n;
+    return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function clearChildren(el) { if (!el) return; while (el.firstChild) el.removeChild(el.firstChild); }
+
+  /* --------- fetchers --------- */
+  async function fetchCategories() {
+    try {
+      const r = await fetch(categoriesApiUrl, { headers: { Accept: 'application/json' }});
+      const json = await r.json();
+      // support multiple shapes
+      let cats = [];
+      if (Array.isArray(json)) cats = json;
+      else if (Array.isArray(json.data)) cats = json.data;
+      else if (Array.isArray(json.categories)) cats = json.categories;
+      else {
+        // try find first array prop
+        for (const k in json) if (Array.isArray(json[k])) { cats = json[k]; break; }
+      }
+      allCategories = cats.map(c => ({ id: c.id ?? null, name: safeCategoryName(c) })).filter(Boolean);
+    } catch (err) {
+      console.error('fetchCategories error', err);
+      allCategories = [];
     }
+  }
 
-    // Show/hide modal sections based on category
-        if (cat.includes('hot coffee')) {
-        // Only show 16oz and 22oz sizes, and only Creamer as add-on
-        basePriceDisplay.style.display = 'none';
-        document.getElementById('sizeOptions').style.display = 'block';
-        document.getElementById('sugarOptions').style.display = 'block';
-        document.getElementById('iceOptions').style.display = 'block';
-    document.getElementById('milkOptions').style.display = 'none';
-        document.getElementById('toppingsOptions').style.display = 'block';
+  async function fetchProducts() {
+    try {
+      const r = await fetch(productsApiUrl + '?status=active', { headers: { Accept: 'application/json' }});
+      const json = await r.json();
+      let items = [];
+      if (Array.isArray(json)) items = json;
+      else if (Array.isArray(json.data)) items = json.data;
+      else if (Array.isArray(json.products)) items = json.products;
+      else items = [];
 
-        // Replace size options
-        document.getElementById('sizeOptions').innerHTML = `
-            <label class="form-label fw-bold mb-1 small">Size</label>
-            <div class="btn-group w-100 btn-group-sm" role="group">
-                <input type="radio" class="btn-check" name="size" id="size-16oz" value="16oz" checked>
-                <label class="btn btn-outline-primary py-1" for="size-16oz">16oz</label>
-                <input type="radio" class="btn-check" name="size" id="size-22oz" value="22oz">
-                <label class="btn btn-outline-primary py-1" for="size-22oz">22oz</label>
-            </div>
-            <div class="row mt-1 px-1">
-                <div class="col-6 text-center">
-                    <small class="text-muted">₱60.00</small>
-                </div>
-                <div class="col-6 text-center">
-                    <small class="text-muted">₱75.00</small>
-                </div>
-            </div>
-        `;
-        // Replace toppings with only Creamer
-        document.getElementById('toppingsOptions').innerHTML = `
-            <label class="form-label fw-bold mb-1 small">Add-ons</label>
-            <div class="form-check form-check-sm">
-                <input class="form-check-input" type="checkbox" name="toppings" value="creamer" id="creamer">
-                <label class="form-check-label small" for="creamer">Creamer (+₱10.00)</label>
-            </div>
-        `;
-    } else if (cat === 'snacks') {
-        // Only show price and notes
-        basePriceDisplay.style.display = 'block';
-        let priceNum = Number(product.price);
-        if (isNaN(priceNum)) priceNum = 0;
-        document.getElementById('productPrice').textContent = `₱${priceNum.toFixed(2)}`;
-        // Focus notes field after modal opens
-        setTimeout(() => {
-            const notes = document.querySelector('textarea[name="instructions"]');
-            if (notes) notes.focus();
-        }, 400);
-    } else if (cat.includes('coffee') || cat.includes('fruit tea') || cat.includes('frappe') || cat.includes('hot coffee')) {
-        basePriceDisplay.style.display = 'none';
-        document.getElementById('sizeOptions').style.display = 'block';
-        document.getElementById('sugarOptions').style.display = 'block';
-        document.getElementById('iceOptions').style.display = 'block';
-        document.getElementById('milkOptions').style.display = 'block';
-        document.getElementById('toppingsOptions').style.display = 'block';
-        // Restore default size and toppings if previously replaced
-        if (!cat.includes('hot coffee')) {
-            document.getElementById('sizeOptions').innerHTML = `
-                <label class="form-label fw-bold mb-1 small">Size</label>
-                <div class="btn-group w-100 btn-group-sm" role="group">
-                    <input type="radio" class="btn-check" name="size" id="size-small" value="small" checked>
-                    <label class="btn btn-outline-primary py-1" for="size-small">S<br><small>₱49</small></label>
-                    <input type="radio" class="btn-check" name="size" id="size-medium" value="medium">
-                    <label class="btn btn-outline-primary py-1" for="size-medium">M<br><small>₱59</small></label>
-                    <input type="radio" class="btn-check" name="size" id="size-large" value="large">
-                    <label class="btn btn-outline-primary py-1" for="size-large">L<br><small>₱69</small></label>
-                </div>
-            `;
-            document.getElementById('toppingsOptions').innerHTML = `
-                <label class="form-label fw-bold mb-1 small">Add-ons</label>
-                <div class="row g-1">
-                    <div class="col-6">
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="extra-shot" id="extra-shot">
-                            <label class="form-check-label small" for="extra-shot">Extra Shot (+₱15.00)</label>
-                        </div>
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="whipped-cream" id="whipped-cream">
-                            <label class="form-check-label small" for="whipped-cream">Whipped Cream (+₱10.00)</label>
-                        </div>
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="vanilla-syrup" id="vanilla-syrup">
-                            <label class="form-check-label small" for="vanilla-syrup">Vanilla Syrup (+₱10.00)</label>
-                        </div>
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="caramel-syrup" id="caramel-syrup">
-                            <label class="form-check-label small" for="caramel-syrup">Caramel Syrup (+₱10.00)</label>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="cinnamon" id="cinnamon">
-                            <label class="form-check-label small" for="cinnamon">Cinnamon (+₱5.00)</label>
-                        </div>
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="pearls" id="pearls">
-                            <label class="form-check-label small" for="pearls">Tapioca Pearls (+₱20.00)</label>
-                        </div>
-                        <div class="form-check form-check-sm">
-                            <input class="form-check-input" type="checkbox" name="toppings" value="jelly" id="jelly">
-                            <label class="form-check-label small" for="jelly">Coconut Jelly (+₱15.00)</label>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    } else {
-        // For all other categories (e.g. Pastry, Food), show price and notes
-        basePriceDisplay.style.display = 'block';
-        let priceNum = Number(product.price);
-        if (isNaN(priceNum)) priceNum = 0;
-        document.getElementById('productPrice').textContent = `₱${priceNum.toFixed(2)}`;
+      allProducts = items.map(p => {
+        const categoryName = p.category ? (p.category.name ?? p.category) : (p.category_name ?? '');
+        return {
+          id: p.id,
+          name: p.name,
+          base_price: Number(p.base_price ?? p.price ?? p.basePrice ?? 0),
+          description: p.description ?? '',
+          category: categoryName,
+          raw: p,
+          price_tiers: parsePriceTiersFromDescription(p.description)
+        };
+      });
+    } catch (err) {
+      console.error('fetchProducts error', err);
+      allProducts = [];
     }
+  }
 
-    window.resetCustomizationForm();
-    window.updateCustomizationTotal();
-    const modal = new bootstrap.Modal(document.getElementById('customizationModal'));
-    modal.show();
-};
+  /* --------- renders --------- */
+  function renderCategoryFilters() {
+    if (!$categoryFilters) return;
+    clearChildren($categoryFilters);
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'btn btn-outline-primary btn-sm category-filter active';
+    allBtn.dataset.category = 'All';
+    allBtn.textContent = 'All';
+    $categoryFilters.appendChild(allBtn);
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Fetch categories and products, then render
-    Promise.all([
-        fetch(categoriesApiUrl, {headers: {Accept: 'application/json'}}).then(r => r.json()),
-        fetch(productsApiUrl, {headers: {Accept: 'application/json'}}).then(r => r.json())
-    ]).then(([catRes, prodRes]) => {
-        allCategories = catRes.data.filter(c => c.status === 'active').map(c => c.name);
-        allProducts = prodRes.data;
-        renderCategoryFilters();
-        renderProductsGrid('All'); // All Default
-        bindCategoryFilterEvents();
+    allCategories.forEach(c => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-outline-primary btn-sm category-filter';
+      b.dataset.category = c.name;
+      b.textContent = c.name;
+      $categoryFilters.appendChild(b);
     });
 
-    // ...existing code for cart, customization, payment, etc...
-});
-
-function renderCategoryFilters() {
-    const container = document.getElementById('category-filters');
-    let html = `<button type="button" class="btn btn-outline-primary btn-sm category-filter" data-category="All">All</button>`;
-    allCategories.forEach((cat, idx) => {
-        html += `<button type="button" class="btn btn-outline-primary btn-sm category-filter${cat==='Coffee'?' active':''}" data-category="${cat}">${cat}</button>`;
+    // attach events
+    $categoryFilters.querySelectorAll('.category-filter').forEach(btn => {
+      btn.addEventListener('click', function () {
+        $categoryFilters.querySelectorAll('.category-filter').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        const cat = this.dataset.category;
+        renderProductsGrid(cat);
+      });
     });
-    container.innerHTML = html;
-}
+  }
 
-function renderProductsGrid(category = 'All') {
-    const grid = document.getElementById('products-grid');
-    let filtered = (category === 'All') ? allProducts : allProducts.filter(p => p.category && p.category.name === category);
+  function renderProductsGrid(category = 'All') {
+    if (!$productsGrid) return;
+    clearChildren($productsGrid);
+
+    const filtered = (category === 'All') ? allProducts : allProducts.filter(p => (p.category || '') === category);
     if (!filtered.length) {
-        grid.innerHTML = '<div class="text-center text-muted py-4">No products found.</div>';
-        return;
+      $productsGrid.innerHTML = '<div class="text-center text-muted py-4">No products found.</div>';
+      return;
     }
-    grid.innerHTML = filtered.map(product => {
-        const cat = product.category ? product.category.name : '';
-        let icon = '<i class="fas fa-utensils fa-lg text-muted"></i>';
-        if (cat === 'Coffee') icon = '<i class="fas fa-coffee fa-lg text-brown"></i>';
-        else if (cat === 'Pastry') icon = '<i class="fas fa-cookie-bite fa-lg text-warning"></i>';
-        else if (cat === 'Food') icon = '<i class="fas fa-hamburger fa-lg text-success"></i>';
-        return `<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-2 product-item" data-category="${cat}">
-            <div class="card product-card h-100" data-product='${JSON.stringify({
-                id: product.id,
-                name: product.name,
-                price: product.base_price,
-                category: cat
-            })}'>
-                <div class="card-img-top d-flex align-items-center justify-content-center bg-light">${icon}</div>
-                <div class="card-body text-center">
-                    <h6 class="card-title">${product.name}</h6>
-                    ${cat !== 'Coffee' ? `<h6 class="text-primary">₱${Number(product.base_price).toFixed(2)}</h6>` : '<small class="text-muted">Select size for price</small>'}
-                </div>
-                <div class="card-footer">
-                    <button class="btn btn-primary btn-sm w-100 add-to-cart" data-product-id="${product.id}"><i class="fas fa-plus"></i> Add</button>
-                </div>
-            </div>
-        </div>`;
+
+    // create product nodes
+    filtered.forEach(product => {
+      const col = document.createElement('div');
+      col.className = 'col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-2 product-item';
+
+      // price display (first tier or base price)
+      const priceText = (product.price_tiers && product.price_tiers.length)
+        ? `From ₱${currency(product.price_tiers[0])}`
+        : `₱${currency(product.base_price)}`;
+
+      // card
+      const card = document.createElement('div');
+      card.className = 'card product-card h-100';
+      // attach serializable product for click handlers
+      card.dataset.product = JSON.stringify({
+        id: product.id,
+        name: product.name,
+        base_price: product.base_price,
+        description: product.description,
+        category: product.category,
+        price_tiers: product.price_tiers
+      });
+
+      card.innerHTML = `
+        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:45px">
+          ${determineIconHtml(product.category)}
+        </div>
+        <div class="card-body text-center p-2">
+          <h6 class="card-title mb-1">${escapeHtml(product.name)}</h6>
+          <div class="small text-muted">${escapeHtml(priceText)}</div>
+        </div>
+        <div class="card-footer p-2">
+          <button class="btn btn-primary btn-sm w-100 add-to-cart" data-product-id="${product.id}">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+      `;
+
+      col.appendChild(card);
+      $productsGrid.appendChild(col);
+
+      // clicking the card (except the Add button) opens the modal
+      card.addEventListener('click', function (e) {
+        if (e.target.closest('.add-to-cart')) return; // handled by add button (will open modal too)
+        const p = JSON.parse(this.dataset.product);
+        openCustomizationModal(p);
+      });
+
+      // add button opens modal as well
+      const addBtn = card.querySelector('.add-to-cart');
+      addBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const p = JSON.parse(card.dataset.product);
+        openCustomizationModal(p);
+      });
+    });
+  }
+
+  function determineIconHtml(category) {
+    const cat = (category || '').toString().toLowerCase();
+    if (cat.includes('coffee')) return '<i class="fas fa-coffee fa-lg text-brown"></i>';
+    if (cat.includes('pastry')) return '<i class="fas fa-cookie-bite fa-lg text-warning"></i>';
+    if (cat.includes('food')) return '<i class="fas fa-hamburger fa-lg text-success"></i>';
+    if (cat.includes('frappe') || cat.includes('tea')) return '<i class="fas fa-mug-hot fa-lg text-info"></i>';
+    return '<i class="fas fa-utensils fa-lg text-muted"></i>';
+  }
+
+  function escapeHtml(s) {
+    if (s === undefined || s === null) return '';
+    return String(s).replace(/[&<>"'`=\/]/g, function (c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;' }[c];
+    });
+  }
+
+  /* --------- customization modal confirm (add to cart) --------- */
+  // When user presses "Add to Cart" inside customization modal
+  $confirmCustomizationBtn.addEventListener('click', function () {
+    // read values from modal (your modal markup names)
+    // currentProduct assigned by openCustomizationModal
+    if (!currentProduct) {
+      console.warn('No product selected for customization');
+      return;
+    }
+
+    // determine chosen price
+    let unitPrice = currentProduct.base_price || 0;
+    // if there are price_tiers, there will be inputs named 'size' with values representing index
+    const selectedSizeInput = document.querySelector('input[name="size"]:checked');
+    if (selectedSizeInput && Array.isArray(currentProduct.price_tiers) && currentProduct.price_tiers.length) {
+      const idx = Number(selectedSizeInput.value);
+      unitPrice = Number(currentProduct.price_tiers[idx] ?? currentProduct.base_price ?? unitPrice);
+    }
+
+    // milk surcharge
+    const milkSel = document.querySelector('select[name="milk"]');
+    if (milkSel && !milkSel.disabled && milkSel.offsetParent !== null) {
+      const m = milkSel.value;
+      if (m === 'almond' || m === 'oat') unitPrice += 15;
+      if (m === 'soy' || m === 'coconut') unitPrice += 10;
+    }
+
+    // toppings
+    const toppings = Array.from(document.querySelectorAll('input[name="toppings"]:checked')).map(cb => cb.value);
+    toppings.forEach(t => {
+      if (t === 'extra-shot') unitPrice += 15;
+      if (t === 'whipped-cream' || t === 'vanilla-syrup' || t === 'caramel-syrup') unitPrice += 10;
+      if (t === 'cinnamon') unitPrice += 5;
+      if (t === 'pearls') unitPrice += 20;
+      if (t === 'jelly') unitPrice += 15;
+    });
+
+    // sugar/ice/instructions
+    const sugarSel = document.querySelector('select[name="sugar"]');
+    const iceSel = document.querySelector('select[name="ice"]');
+    const instructions = document.querySelector('textarea[name="instructions"]')?.value ?? '';
+
+    const qty = 1; // modal doesn't have qty, use 1 (you can expand)
+    // build cart item
+    const item = {
+      product_id: currentProduct.id,
+      name: currentProduct.name,
+      qty,
+      size: selectedSizeInput ? (selectedSizeInput.nextElementSibling?.textContent?.trim() || selectedSizeInput.value) : null,
+      toppings,
+      sugar: sugarSel ? sugarSel.value : null,
+      ice: iceSel ? iceSel.value : null,
+      milk: milkSel ? milkSel.value : null,
+      instructions,
+      price: Number(unitPrice),      // **unit price**
+      total: Number(unitPrice)       // total for one unit (qty multiplies later)
+    };
+
+    // add to cart (simple push). You could de-dup by product_id+size later.
+    cart.push(item);
+    // hide modal
+    try { bootstrap.Modal.getInstance($customizationModalElem)?.hide(); } catch (e) {}
+    currentProduct = null;
+    renderCart();
+  });
+
+  /* --------- cart render & events --------- */
+  function renderCart() {
+    // show/hide
+    if (!cart.length) {
+      if ($cartEmpty) $cartEmpty.style.display = '';
+      if ($cartItemsContainer) { $cartItemsContainer.style.display = 'none'; $cartItemsContainer.innerHTML = ''; }
+      if ($subtotalEl) $subtotalEl.textContent = `₱0.00`;
+      if ($totalEl) $totalEl.textContent = `₱0.00`;
+      return;
+    }
+
+    if ($cartEmpty) $cartEmpty.style.display = 'none';
+    if ($cartItemsContainer) $cartItemsContainer.style.display = '';
+
+    // render items
+    $cartItemsContainer.innerHTML = cart.map((item, idx) => {
+      const total = item.price * item.qty;
+      return `
+      <div class="cart-item d-flex align-items-center justify-content-between border-bottom py-2">
+        <div>
+          <h6 class="mb-0">${escapeHtml(item.name)} <small class="text-muted">x${item.qty}</small></h6>
+          <div class="small text-muted">${item.size ? 'Size: ' + escapeHtml(item.size) : ''} ${item.toppings && item.toppings.length ? ' | ' + escapeHtml(item.toppings.join(', ')) : ''}</div>
+          <div class="small text-muted">${item.instructions ? escapeHtml(item.instructions) : ''}</div>
+        </div>
+        <div class="text-end">
+          <div class="fw-bold text-primary mb-1">₱${currency(total)}</div>
+          <div class="input-group input-group-sm mb-1" style="width: 110px; display: inline-flex;">
+            <button class="btn btn-outline-secondary btn-sm btn-qty-minus" data-idx="${idx}" type="button">-</button>
+            <input type="text" class="form-control text-center" value="${item.qty}" readonly style="max-width: 36px;">
+            <button class="btn btn-outline-secondary btn-sm btn-qty-plus" data-idx="${idx}" type="button">+</button>
+          </div>
+          <button class="btn btn-sm btn-danger remove-cart-item ms-1" data-idx="${idx}"><i class="fas fa-times"></i></button>
+        </div>
+      </div>`;
     }).join('');
 
-    // Bind click event to open customization modal on card click (not just add button)
-    grid.querySelectorAll('.product-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Prevent double trigger if add button is clicked
-            if (e.target.closest('.add-to-cart')) return;
-            const product = JSON.parse(this.dataset.product);
-            openCustomizationModal(product);
-        });
-    });
-
-    // Bind add-to-cart button as well (for explicit add button click)
-    grid.querySelectorAll('.add-to-cart').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const productCard = this.closest('.product-card');
-            const product = JSON.parse(productCard.dataset.product);
-            openCustomizationModal(product);
-        });
-    });
-}
-
-function bindCategoryFilterEvents() {
-    document.querySelectorAll('.category-filter').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.category-filter').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            renderProductsGrid(this.dataset.category);
-        });
-    });
-}
-
-function bindProductAddEvents() {
-    document.querySelectorAll('.add-to-cart').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const productCard = this.closest('.product-card');
-            const product = JSON.parse(productCard.dataset.product);
-            openCustomizationModal(product);
-        });
-    });
-}
-
-// ...existing code for cart, customization, payment, etc...
-
-// Make resetCustomizationForm globally accessible
-window.resetCustomizationForm = function() {
-    // Reset size radio (support both classic and Hot Coffee)
-    let sizeSmall = document.getElementById('size-small');
-    let size16oz = document.getElementById('size-16oz');
-    if (sizeSmall) {
-        sizeSmall.checked = true;
-    } else if (size16oz) {
-        size16oz.checked = true;
-    }
-    // Reset dropdowns
-    let sugarSel = document.querySelector('select[name="sugar"]');
-    if (sugarSel) sugarSel.value = '100';
-    let iceSel = document.querySelector('select[name="ice"]');
-    if (iceSel) iceSel.value = 'normal-ice';
-    let milkSel = document.querySelector('select[name="milk"]');
-    if (milkSel) milkSel.value = 'regular';
-    // Reset checkboxes
-    document.querySelectorAll('input[name="toppings"]').forEach(cb => cb.checked = false);
-    // Reset textarea
-    let notes = document.querySelector('textarea[name="instructions"]');
-    if (notes) notes.value = '';
-};
-
-// Make updateCustomizationTotal globally accessible
-window.updateCustomizationTotal = function() {
-    let total;
-    // Handle coffee items differently - use size as base price
-    if (currentProduct.category && currentProduct.category.toLowerCase() === 'hot coffee') {
-        const selectedSize = document.querySelector('input[name="size"]:checked');
-        if (selectedSize) {
-            if (selectedSize.value === '16oz') total = 60.00;
-            else if (selectedSize.value === '22oz') total = 75.00;
-            else total = 60.00;
-        } else {
-            total = 60.00;
-        }
-    } else if (currentProduct.category === 'Coffee') {
-        const selectedSize = document.querySelector('input[name="size"]:checked');
-        if (selectedSize) {
-            if (selectedSize.value === 'small') total = 49.00;
-            else if (selectedSize.value === 'medium') total = 59.00;
-            else if (selectedSize.value === 'large') total = 69.00;
-            else total = 49.00; // default to small
-        } else {
-            total = 49.00; // default to small
-        }
-    } else {
-        // Non-coffee items use the original price
-        total = Number(currentProduct.price) || 0;
-    }
-    // Add milk cost (only for coffee)
-    if (currentProduct.category === 'Coffee') {
-        const selectedMilk = document.querySelector('select[name="milk"]').value;
-        if (selectedMilk === 'almond' || selectedMilk === 'oat') total += 15.00;
-        if (selectedMilk === 'soy' || selectedMilk === 'coconut') total += 10.00;
-    }
-    // Add toppings cost (only for coffee)
-    if (currentProduct.category === 'Coffee') {
-        document.querySelectorAll('input[name="toppings"]:checked').forEach(topping => {
-            const value = topping.value;
-            if (value === 'extra-shot') total += 15.00;
-            if (value === 'whipped-cream' || value === 'vanilla-syrup' || value === 'caramel-syrup') total += 10.00;
-            if (value === 'cinnamon') total += 5.00;
-            if (value === 'pearls') total += 20.00;
-            if (value === 'jelly') total += 15.00;
-        });
-    }
-    document.getElementById('currentTotal').textContent = `₱${total.toFixed(2)}`;
-};
-</script>
-<script>
-// --- CART FUNCTIONALITY ---
-let cart = [];
-
-function renderCart() {
-    const cartEmpty = document.getElementById('cart-empty');
-    const cartItems = document.getElementById('cart-items');
-    const paymentSection = document.getElementById('payment-section');
-    const orderSummary = document.getElementById('order-summary');
-    if (!cart.length) {
-        cartEmpty.style.display = '';
-        cartItems.style.display = 'none';
-        cartItems.innerHTML = '';
-        if (paymentSection) paymentSection.style.display = 'none';
-        if (orderSummary) orderSummary.style.display = 'none';
-        return;
-    }
-    cartEmpty.style.display = 'none';
-    cartItems.style.display = '';
-    cartItems.innerHTML = cart.map((item, idx) => `
-        <div class="cart-item d-flex align-items-center justify-content-between border-bottom py-2">
-            <div>
-                <h6 class="mb-0">${item.name} <small class="text-muted">x${item.qty}</small></h6>
-                <div class="small text-muted">${item.size ? item.size : ''} ${item.toppings && item.toppings.length ? ' | ' + item.toppings.join(', ') : ''}</div>
-                <div class="small text-muted">${item.instructions ? item.instructions : ''}</div>
-            </div>
-            <div class="text-end">
-                <div class="fw-bold text-primary mb-1">₱${(item.total * item.qty).toFixed(2)}</div>
-                <div class="input-group input-group-sm mb-1" style="width: 110px; display: inline-flex;">
-                    <button class="btn btn-outline-secondary btn-sm btn-qty-minus" data-idx="${idx}" type="button">-</button>
-                    <input type="text" class="form-control text-center" value="${item.qty}" readonly style="max-width: 36px;">
-                    <button class="btn btn-outline-secondary btn-sm btn-qty-plus" data-idx="${idx}" type="button">+</button>
-                </div>
-                <button class="btn btn-sm btn-danger remove-cart-item ms-1" data-idx="${idx}"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
-    `).join('');
-    if (paymentSection) paymentSection.style.display = '';
-    if (orderSummary) orderSummary.style.display = '';
-
-    // Calculate subtotal and total
+    // totals
     let subtotal = 0;
-    cart.forEach(item => {
-        subtotal += item.total * item.qty;
-    });
-    // If you want to add tax/discount, do it here. For now, total = subtotal
-    let total = subtotal;
-    const subtotalElem = document.getElementById('subtotal');
-    const totalElem = document.getElementById('total');
-    if (subtotalElem) subtotalElem.textContent = `₱${subtotal.toFixed(2)}`;
-    if (totalElem) totalElem.textContent = `₱${total.toFixed(2)}`;
-    // Remove item event
-    cartItems.querySelectorAll('.remove-cart-item').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const idx = Number(this.dataset.idx);
-            cart.splice(idx, 1);
-            renderCart();
-        });
-    });
-    // Quantity plus/minus events
-    cartItems.querySelectorAll('.btn-qty-plus').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const idx = Number(this.dataset.idx);
-            cart[idx].qty += 1;
-            renderCart();
-        });
-    });
-    cartItems.querySelectorAll('.btn-qty-minus').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const idx = Number(this.dataset.idx);
-            if (cart[idx].qty > 1) {
-                cart[idx].qty -= 1;
-                renderCart();
-            }
-        });
-    });
-}
+    cart.forEach(i => subtotal += i.price * i.qty);
+    const total = subtotal;
+    $subtotalEl.textContent = `₱${currency(subtotal)}`;
+    $totalEl.textContent = `₱${currency(total)}`;
 
-// Add to cart from modal
-document.getElementById('confirmCustomization').addEventListener('click', function() {
-    // Gather selected options
-    const name = document.getElementById('selectedProduct').textContent;
-    let size = '';
-    const sizeRadio = document.querySelector('input[name="size"]:checked');
-    if (sizeRadio) size = sizeRadio.value;
-    let toppings = [];
-    document.querySelectorAll('input[name="toppings"]:checked').forEach(cb => toppings.push(cb.value));
-    let sugar = '';
-    let ice = '';
-    let milk = '';
-    const sugarSel = document.querySelector('select[name="sugar"]');
-    if (sugarSel) sugar = sugarSel.value;
-    const iceSel = document.querySelector('select[name="ice"]');
-    if (iceSel) ice = iceSel.value;
-    const milkSel = document.querySelector('select[name="milk"]');
-    if (milkSel && milkSel.offsetParent !== null) milk = milkSel.value;
-    const instructions = document.querySelector('textarea[name="instructions"]').value;
-    const totalText = document.getElementById('currentTotal').textContent;
-    const total = Number(totalText.replace(/[^\d.]/g, ''));
-    // Add to cart array
-    cart.push({
-        name,
-        size,
-        toppings,
-        sugar,
-        ice,
-        milk,
-        instructions,
-        total,
-        qty: 1
+    // attach cart buttons
+    $cartItemsContainer.querySelectorAll('.remove-cart-item').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const idx = Number(this.dataset.idx);
+        cart.splice(idx, 1);
+        renderCart();
+      });
     });
-    renderCart();
-    // Hide modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('customizationModal'));
-    if (modal) modal.hide();
-});
+    $cartItemsContainer.querySelectorAll('.btn-qty-plus').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const idx = Number(this.dataset.idx);
+        cart[idx].qty++;
+        renderCart();
+      });
+    });
+    $cartItemsContainer.querySelectorAll('.btn-qty-minus').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const idx = Number(this.dataset.idx);
+        if (cart[idx].qty > 1) cart[idx].qty--;
+        renderCart();
+      });
+    });
+  }
 
-// Calculate and display change
-function calculateChange() {
-    const paymentInput = document.getElementById('customerPayment');
-    const totalElem = document.getElementById('total');
-    const changeDisplay = document.getElementById('changeDisplay');
-    const changeAmount = document.getElementById('changeAmount');
-    let payment = parseFloat(paymentInput.value) || 0;
-    let total = 0;
-    if (totalElem) {
-        total = parseFloat(totalElem.textContent.replace(/[^\d.]/g, '')) || 0;
+  /* --------- order processing (existing handler uses /orders/store) --------- */
+  $processOrderBtn.addEventListener('click', async function () {
+    if (!cart.length) { alert('Cart is empty!'); return; }
+    const customerName = document.getElementById('customerName')?.value || null;
+    const orderType = document.getElementById('orderType')?.value || 'dine-in';
+    const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
+    const subtotal = parseFloat($subtotalEl.textContent.replace(/[^\d.]/g, '')) || 0;
+    const total = parseFloat($totalEl.textContent.replace(/[^\d.]/g, '')) || 0;
+    const amountPaid = parseFloat($customerPayment?.value) || total;
+    const changeDue = amountPaid - total;
+
+    const items = cart.map(item => ({
+      product_id: item.product_id,
+      name: item.name,
+      size: item.size ?? null,
+      toppings: item.toppings ?? [],
+      sugar: item.sugar ?? null,
+      ice: item.ice ?? null,
+      milk: item.milk ?? null,
+      instructions: item.instructions ?? null,
+      price: item.price,  // per-unit
+      qty: item.qty
+    }));
+
+    try {
+      const res = await fetch('/orders/store', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          customer_name: customerName,
+          order_type: orderType,
+          payment_mode: paymentMode,
+          subtotal,
+          total,
+          amount_paid: amountPaid,
+          change_due: changeDue,
+          items
+        }),
+        credentials: 'same-origin'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('Order placed successfully! Order ID: ' + data.order_id);
+        cart = [];
+        renderCart();
+        // reset inputs
+        document.getElementById('customerName').value = '';
+        document.getElementById('customerPayment').value = '';
+        // optionally go to receipt: window.location = '/sales/receipt/' + data.order_id
+      } else {
+        console.error('Order API error', data);
+        alert('Order failed: ' + (data.message || JSON.stringify(data)));
+      }
+    } catch (err) {
+      console.error('Process order failed', err);
+      alert('Order failed (network). See console.');
     }
-    let change = payment - total;
-    if (changeDisplay) {
-        if (!isNaN(change) && payment > 0) {
-            changeDisplay.style.display = '';
-            changeAmount.textContent = `₱${change.toFixed(2)}`;
-            changeAmount.classList.remove('change-positive', 'change-negative');
-            if (change >= 0) {
-                changeAmount.classList.add('change-positive');
-            } else {
-                changeAmount.classList.add('change-negative');
-            }
-        } else {
-            changeDisplay.style.display = 'none';
-        }
+  });
+
+  /* --------- openCustomizationModal wrapper so currentProduct is set for confirm --------- */
+  // You already have openCustomizationModal(product) in your blade. We will wrap/augment it so currentProduct gets set.
+  const originalOpenCustomizationModal = window.openCustomizationModal;
+  window.openCustomizationModal = function (product) {
+    // product can be plain object from dataset with price_tiers or base_price
+    currentProduct = {
+      id: product.id,
+      name: product.name,
+      base_price: Number(product.base_price ?? 0),
+      price_tiers: Array.isArray(product.price_tiers) ? product.price_tiers : [],
+      description: product.description ?? '',
+      category: product.category ?? ''
+    };
+    // call original (keeps the UI you already made)
+    if (typeof originalOpenCustomizationModal === 'function') {
+      originalOpenCustomizationModal(product);
+    } else {
+      // fallback: show modal minimal info
+      try {
+        document.getElementById('selectedProduct').textContent = currentProduct.name;
+        document.getElementById('productPrice').textContent = `₱${currency(currentProduct.base_price)}`;
+        bootstrap.Modal.getOrCreateInstance($customizationModalElem).show();
+      } catch (e) {}
     }
-}
+  };
 
-// Initial render
-document.addEventListener('DOMContentLoaded', function() {
+  /* --------- init: fetch and render --------- */
+  async function init() {
+    await fetchCategories();
+    await fetchProducts();
+    renderCategoryFilters();
+    renderProductsGrid('All');
     renderCart();
-    // Listen for cart/total changes to recalculate change
-    document.getElementById('customerPayment').addEventListener('input', calculateChange);
+    // wire clear cart button if present
+    const clearBtn = document.getElementById('clear-cart');
+    if (clearBtn) clearBtn.addEventListener('click', function () { cart = []; renderCart(); });
+  }
 
-    // Process Order button click
-    document.getElementById('process-order').addEventListener('click', async function() {
-        if (!cart.length) {
-            alert('Cart is empty!');
-            return;
-        }
-        const customerName = document.getElementById('customerName').value;
-        const orderType = document.getElementById('orderType').value;
-        const paymentMode = document.getElementById('paymentMode').value;
-        const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace(/[^\d.]/g, '')) || 0;
-        const total = parseFloat(document.getElementById('total').textContent.replace(/[^\d.]/g, '')) || 0;
-        const amountPaid = parseFloat(document.getElementById('customerPayment').value) || 0;
-        const changeDue = amountPaid - total;
-        // Prepare items
-        const items = cart.map(item => ({
-            name: item.name,
-            size: item.size || null,
-            toppings: item.toppings || [],
-            sugar: item.sugar || null,
-            ice: item.ice || null,
-            milk: item.milk || null,
-            instructions: item.instructions || null,
-            price: item.total,
-            qty: item.qty
-        }));
-        try {
-            const response = await fetch('/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    customer_name: customerName,
-                    order_type: orderType,
-                    payment_mode: paymentMode,
-                    subtotal,
-                    total,
-                    amount_paid: amountPaid,
-                    change_due: changeDue,
-                    items
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                alert('Order placed successfully!');
-                cart.length = 0;
-                renderCart();
-                document.getElementById('customerName').value = '';
-                document.getElementById('customerPayment').value = '';
-                calculateChange();
-            } else {
-                alert('Order failed: ' + (data.message || 'Unknown error'));
-            }
-        } catch (err) {
-            alert('Order failed: ' + err.message);
-        }
-    });
-});
+  init();
 
-// Also recalculate change whenever cart is updated
-const origRenderCart = renderCart;
-renderCart = function() {
-    origRenderCart.apply(this, arguments);
-    calculateChange();
-};
+})();
 </script>
+
 @endsection
