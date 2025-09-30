@@ -47,7 +47,9 @@ class StockController extends Controller
         // For stats, get all products (not paginated)
         $allProducts = Product::select('current_stock', 'low_stock_alert', 'base_price')->get();
         $totalProducts = Product::count();
-        $lowStockCount = $allProducts->where('current_stock', '<=', 'low_stock_alert')->where('current_stock', '>', 0)->count();
+       $lowStockCount = $allProducts->filter(function($product) {
+    return $product->current_stock <= $product->low_stock_alert && $product->current_stock > 0;
+})->count();
         $outOfStockCount = $allProducts->where('current_stock', 0)->count();
         $totalStockValue = $allProducts->sum(function($product) {
             return $product->current_stock * $product->base_price;

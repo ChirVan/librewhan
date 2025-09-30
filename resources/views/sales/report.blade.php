@@ -101,7 +101,7 @@
             </div>
         </div>
 
-        <!-- Key Metrics Summary -->
+        <!-- Key Metrics Summary (Dynamic) -->
         <div class="row mb-4">
             <div class="col-lg-3 col-md-6">
                 <div class="card card-stats card-round">
@@ -115,10 +115,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Total Revenue</p>
-                                    <h4 class="card-title text-success" id="totalRevenue">—</h4>
-                                    <span class="text-success small" id="revenueGrowth">
-                                        <i class="fas fa-arrow-up"></i> —
-                                    </span>
+                                    <h4 class="card-title text-success">₱{{ number_format($totalRevenue, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -137,8 +134,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Total Orders</p>
-                                    <h4 class="card-title text-primary" id="totalOrders">—</h4>
-                                    <span class="text-success small" id="ordersGrowth">—</span>
+                                    <h4 class="card-title text-primary">{{ $totalOrders }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -157,8 +153,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Average Order</p>
-                                    <h4 class="card-title text-warning" id="averageOrder">—</h4>
-                                    <span class="text-success small" id="avgOrderGrowth">—</span>
+                                    <h4 class="card-title text-warning">₱{{ number_format($avgOrder, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -177,8 +172,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Customers</p>
-                                    <h4 class="card-title text-info" id="totalCustomers">—</h4>
-                                    <span class="text-success small" id="customersGrowth">—</span>
+                                    <h4 class="card-title text-info">{{ $uniqueCustomers }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -228,7 +222,7 @@
 
         <!-- Performance Analytics -->
         <div class="row mb-4">
-            <!-- Top Products -->
+            <!-- Top Products (Dynamic) -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
@@ -238,22 +232,49 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="top-products" id="topProductsList"></div>
+                        <div class="top-products">
+                            @forelse ($topProducts as $product)
+                                <div class="product-item">
+                                    <div class="product-info">
+                                        <div class="product-name">{{ $loop->iteration }}. {{ $product->name }}</div>
+                                        <div class="product-category">{{ $product->category ?? '' }}</div>
+                                    </div>
+                                    <div class="product-stats">
+                                        <div class="product-sales">${{ number_format($product->total_sales, 2) }}</div>
+                                        <div class="product-quantity">{{ $product->total_qty }} sold</div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-muted">No sales data available.</div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Payment Methods -->
+            <!-- Payment Methods (Dynamic) -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h4 class="card-title">Payment Modes Distribution</h4>
                     </div>
                     <div class="card-body">
-                        <div style="position: relative; height: 250px;">
-                            <canvas id="paymentMethodChart"></canvas>
+                        <div class="payment-stats mt-3">
+                            @forelse ($paymentStats as $stat)
+                                <div class="payment-stat">
+                                    <div>
+                                        <div class="payment-method">{{ $stat['method'] }}</div>
+                                        <div class="payment-percentage">{{ $stat['percent'] }}%</div>
+                                    </div>
+                                    <div class="payment-amount">P{{ number_format($stat['amount'], 2) }}</div>
+                                </div>
+                            @empty
+                                <div class="text-muted">No payment data available.</div>
+                            @endforelse
                         </div>
-                        <div class="payment-stats mt-3" id="paymentStats"></div>
+                        <div class="mt-2">
+                            <strong>Most Used:</strong> {{ $mostUsedPayment ?? 'N/A' }}
+                        </div>
                     </div>
                 </div>
             </div>

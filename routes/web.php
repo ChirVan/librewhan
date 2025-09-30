@@ -185,7 +185,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Sales & Reports routes (protected)
     // Route::prefix('sales')->name('sales.')->group(function () {
-    Route::middleware(['auth','role:admin'])->prefix('sales')->name('sales.')->group(function () {
+    Route::middleware(['auth','role:admin|barista'])->prefix('sales')->name('sales.')->group(function () {
         Route::get('/', [SalesReportController::class, 'index'])->name('sms.index'); // when admin logged in, go to sales
         Route::get('/report', [SalesReportController::class, 'index'])->name(name: 'report');
         Route::get('/sms', [SalesReportController::class, 'smsIndex'])->name('sms.index');

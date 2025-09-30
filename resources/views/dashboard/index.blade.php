@@ -62,7 +62,9 @@
               <div class="col col-stats ms-3 ms-sm-0">
                 <div class="numbers">
                   <p class="card-category">Low Stocks</p>
-                  <h4 class="card-title text-white" id="statLowStocks">—</h4>
+                  <h4 class="card-title text-white">
+                    {{ isset($lowStockProducts) ? count($lowStockProducts) : '—' }}
+                  </h4>
                 </div>
               </div>
             </div>
@@ -143,7 +145,17 @@
                     <th>Quantity</th>
                   </tr>
                 </thead>
-                <tbody id="lowStockBody"></tbody>
+                <tbody>
+                  @forelse($lowStockProducts ?? [] as $product)
+                    <tr>
+                      <td>{{ $product->id }}</td>
+                      <td>{{ $product->name }}</td>
+                      <td>{{ $product->current_stock }}</td>
+                    </tr>
+                  @empty
+                    <tr><td colspan="3" class="text-center text-muted">No low stock products</td></tr>
+                  @endforelse
+                </tbody>
               </table>
             </div>
           </div>

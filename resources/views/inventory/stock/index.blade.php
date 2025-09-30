@@ -6,8 +6,8 @@
         <div class="page-header">
             <h3 class="fw-bold mb-3">Stock Levels</h3>
             <ul class="breadcrumbs mb-3">
-                <li class="nav-home"><a href="{{ route('dashboard') }}"><i class="icon-home"></i></a></li>
-                <li class="separator"><i class="icon-arrow-right"></i></li>
+                <li class="nav-home"><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i></a></li>
+                <li class="separator"><i class="fas fa-angle-right"></i></li>
                 <li class="nav-item">Stock</li>
             </ul>
         </div>
@@ -190,7 +190,35 @@
                         </table>
                     </div>
                     <div class="mt-3">
-                        {{ $products->links() }}
+                        {{-- Custom pagination to avoid SVG chevrons --}}
+                        @if ($products->hasPages())
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    {{-- Previous Page Link --}}
+                                    @if ($products->onFirstPage())
+                                        <li class="page-item disabled"><span class="page-link">&lt; Prev</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link" href="{{ $products->previousPageUrl() }}" rel="prev">&lt; Prev</a></li>
+                                    @endif
+
+                                    {{-- Pagination Elements --}}
+                                    @foreach ($products->links()->elements[0] as $page => $url)
+                                        @if ($page == $products->currentPage())
+                                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                                        @else
+                                            <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Next Page Link --}}
+                                    @if ($products->hasMorePages())
+                                        <li class="page-item"><a class="page-link" href="{{ $products->nextPageUrl() }}" rel="next">Next &gt;</a></li>
+                                    @else
+                                        <li class="page-item disabled"><span class="page-link">Next &gt;</span></li>
+                                    @endif
+                                </ul>
+                            </nav>
+                        @endif
                     </div>
                 </div>
             </div>

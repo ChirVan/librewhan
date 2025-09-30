@@ -42,7 +42,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Pending Orders</p>
-                                    <h4 class="card-title" id="pending-count">8</h4>
+                                    <h4 class="card-title" id="pending-count">{{ $pendingCount ?? 0 }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -61,7 +61,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">In Preparation</p>
-                                    <h4 class="card-title" id="preparing-count">5</h4>
+                                    <h4 class="card-title" id="preparing-count">{{ $preparingCount ?? 0 }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -80,7 +80,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Ready</p>
-                                    <h4 class="card-title" id="ready-count">3</h4>
+                                    <h4 class="card-title" id="ready-count">{{ $readyCount ?? 0 }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -99,7 +99,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Total Value</p>
-                                    <h4 class="card-title" id="total-value">$284.50</h4>
+                                    <h4 class="card-title" id="total-value">₱{{ number_format($totalValue ?? 0, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -147,7 +147,85 @@
 
         <!-- Orders Grid -->
         <div class="row" id="orders-container">
-            <!-- Orders will be loaded here -->
+            @forelse($orders as $order)
+            <div class="col-xl-4 col-lg-6 col-md-6">
+                <div class="card order-card status-pending">
+                    <div class="order-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">
+                                    <i class="fas fa-utensils text-success"></i>
+                                    Order #{{ $order->order_number }}
+                                </h6>
+                                <small class="text-muted">{{ $order->customer_name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge status-pending">Pending</span>
+                                <div class="order-time">{{ $order->created_at->diffForHumans() }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="order-body">
+                        <div class="item-list">
+                            @foreach($order->items as $item)
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <span class="fw-bold">{{ $item->qty }}x {{ $item->name }}</span>
+                                    {{-- Add customization display if needed --}}
+                                </div>
+                                <span class="text-muted">₱{{ number_format($item->price * $item->qty, 2) }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="border-top pt-2 mt-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Total:</strong>
+                                <strong class="text-primary">₱{{ number_format($order->total, 2) }}</strong>
+                            </div>
+                        </div>
+                        <div class="order-footer mt-2">
+                            <div class="order-actions">
+                                @if($order->status === 'pending')
+                                <form method="POST" action="{{ route('orders.updateStatus', $order->id) }}" style="display:inline;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="preparing">
+                                    <button type="submit" class="btn btn-warning btn-action">
+                                        <i class="fas fa-play"></i> Start Preparing
+                                    </button>
+                                </form>
+                                @elseif($order->status === 'preparing')
+                                <form method="POST" action="{{ route('orders.updateStatus', $order->id) }}" style="display:inline;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="ready">
+                                    <button type="submit" class="btn btn-success btn-action">
+                                        <i class="fas fa-check"></i> Mark Ready
+                                    </button>
+                                </form>
+                                @elseif($order->status === 'ready')
+                                <form method="POST" action="{{ route('orders.updateStatus', $order->id) }}" style="display:inline;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="completed">
+                                    <button type="submit" class="btn btn-primary btn-action">
+                                        <i class="fas fa-check-circle"></i> Complete Order
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No pending orders found</h5>
+                </div>
+            </div>
+            @endforelse
         </div>
     </div>
 </div>
@@ -196,232 +274,111 @@
 </div>
 
 <style>
-.order-card {
-    border: 2px solid #e3e6f0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    margin-bottom: 20px;
-}
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
 
-.order-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
 
-.order-card.status-pending {
-    border-left: 5px solid #ffc107;
-}
+    .status-preparing {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
 
-.order-card.status-preparing {
-    border-left: 5px solid #17a2b8;
-}
+    .status-ready {
+        background: #d4edda;
+        color: #155724;
+    }
 
-.order-card.status-ready {
-    border-left: 5px solid #28a745;
-}
+    .order-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
 
-.order-header {
-    background: #f8f9fa;
-    border-bottom: 1px solid #e3e6f0;
-    padding: 12px 15px;
-}
+    .item-list {
+        max-height: 120px;
+        overflow-y: auto;
+    }
 
-.order-body {
-    padding: 15px;
-}
+    .item-customization {
+        font-size: 0.75rem;
+        color: #6c757d;
+        font-style: italic;
+    }
 
-.order-footer {
-    background: #f8f9fa;
-    border-top: 1px solid #e3e6f0;
-    padding: 10px 15px;
-}
+    .filter-btn.active {
+        background-color: #1572e8;
+        border-color: #1572e8;
+        color: white;
+    }
 
-.status-badge {
-    font-size: 0.75rem;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-weight: 600;
-}
+    .order-actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
 
-.status-pending {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-preparing {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.status-ready {
-    background: #d4edda;
-    color: #155724;
-}
-
-.order-time {
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-
-.item-list {
-    max-height: 120px;
-    overflow-y: auto;
-}
-
-.item-customization {
-    font-size: 0.75rem;
-    color: #6c757d;
-    font-style: italic;
-}
-
-.filter-btn.active {
-    background-color: #1572e8;
-    border-color: #1572e8;
-    color: white;
-}
-
-.order-actions {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-}
-
-.btn-action {
-    font-size: 0.75rem;
-    padding: 4px 8px;
-}
+    .btn-action {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Sample orders data - replace with actual API calls
-    let orders = [
-        {
-            id: 'ORD-001',
-            customer_name: 'John Doe',
-            order_type: 'dine-in',
-            status: 'pending',
-            created_at: '2024-01-15 10:30:00',
-            total: 15.75,
-            items: [
-                {
-                    name: 'Cappuccino',
-                    quantity: 2,
-                    price: 4.25,
-                    customizations: {
-                        size: 'large',
-                        sugar: '50',
-                        milk: 'almond',
-                        toppings: ['extra-shot']
-                    }
-                },
-                {
-                    name: 'Croissant',
-                    quantity: 1,
-                    price: 2.95,
-                    customizations: {}
-                }
-            ]
-        },
-        {
-            id: 'ORD-002',
-            customer_name: 'Jane Smith',
-            order_type: 'takeaway',
-            status: 'preparing',
-            created_at: '2024-01-15 10:25:00',
-            total: 12.50,
-            items: [
-                {
-                    name: 'Latte',
-                    quantity: 1,
-                    price: 4.75,
-                    customizations: {
-                        size: 'medium',
-                        sugar: '100',
-                        milk: 'oat',
-                        toppings: ['whipped-cream', 'vanilla-syrup']
-                    }
-                },
-                {
-                    name: 'Blueberry Muffin',
-                    quantity: 1,
-                    price: 3.45,
-                    customizations: {}
-                }
-            ]
-        },
-        {
-            id: 'ORD-003',
-            customer_name: 'Mike Wilson',
-            order_type: 'delivery',
-            status: 'ready',
-            created_at: '2024-01-15 10:20:00',
-            total: 18.95,
-            items: [
-                {
-                    name: 'Americano',
-                    quantity: 2,
-                    price: 3.25,
-                    customizations: {
-                        size: 'large',
-                        sugar: 'no-sugar',
-                        milk: 'regular',
-                        toppings: []
-                    }
-                },
-                {
-                    name: 'Caesar Salad',
-                    quantity: 1,
-                    price: 8.95,
-                    customizations: {}
-                }
-            ]
-        }
-    ];
+    document.addEventListener('DOMContentLoaded', function() {
+        // REMOVE STATIC SAMPLE ORDERS DATA
+        // Use dynamic Blade data only
 
-    let currentFilter = 'all';
-    let currentTypeFilter = 'all';
+        let currentFilter = 'all';
+        let currentTypeFilter = 'all';
 
-    // Initialize page
-    loadOrders();
-    updateStatistics();
-
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentFilter = this.dataset.status;
-            loadOrders();
-        });
-    });
-
-    // Order type filter
-    document.getElementById('orderTypeFilter').addEventListener('change', function() {
-        currentTypeFilter = this.value;
-        loadOrders();
-    });
-
-    // Refresh button
-    document.getElementById('refreshOrders').addEventListener('click', function() {
+        // Initialize page
         loadOrders();
         updateStatistics();
-        
-        // Show refresh animation
-        const icon = this.querySelector('i');
-        icon.classList.add('fa-spin');
-        setTimeout(() => icon.classList.remove('fa-spin'), 1000);
-    });
 
-    function loadOrders() {
-        const container = document.getElementById('orders-container');
-        const filteredOrders = orders.filter(order => {
-            const statusMatch = currentFilter === 'all' || order.status === currentFilter;
-            const typeMatch = currentTypeFilter === 'all' || order.order_type === currentTypeFilter;
-            return statusMatch && typeMatch;
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.status;
+                loadOrders();
+            });
         });
 
-        if (filteredOrders.length === 0) {
-            container.innerHTML = `
+        // Order type filter
+        document.getElementById('orderTypeFilter').addEventListener('change', function() {
+            currentTypeFilter = this.value;
+            loadOrders();
+        });
+
+        // Refresh button
+        document.getElementById('refreshOrders').addEventListener('click', function() {
+            loadOrders();
+            updateStatistics();
+
+            // Show refresh animation
+            const icon = this.querySelector('i');
+            icon.classList.add('fa-spin');
+            setTimeout(() => icon.classList.remove('fa-spin'), 1000);
+        });
+
+        function loadOrders() {
+            const container = document.getElementById('orders-container');
+            const filteredOrders = orders.filter(order => {
+                const statusMatch = currentFilter === 'all' || order.status === currentFilter;
+                const typeMatch = currentTypeFilter === 'all' || order.order_type === currentTypeFilter;
+                return statusMatch && typeMatch;
+            });
+
+            if (filteredOrders.length === 0) {
+                container.innerHTML = `
                 <div class="col-12">
                     <div class="text-center py-5">
                         <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
@@ -430,19 +387,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
-            return;
+                return;
+            }
+
+            container.innerHTML = filteredOrders.map(order => createOrderCard(order)).join('');
         }
 
-        container.innerHTML = filteredOrders.map(order => createOrderCard(order)).join('');
-    }
+        function createOrderCard(order) {
+            const statusClass = `status-${order.status}`;
+            const statusBadge = getStatusBadge(order.status);
+            const orderTypeIcon = getOrderTypeIcon(order.order_type);
+            const timeAgo = getTimeAgo(order.created_at);
 
-    function createOrderCard(order) {
-        const statusClass = `status-${order.status}`;
-        const statusBadge = getStatusBadge(order.status);
-        const orderTypeIcon = getOrderTypeIcon(order.order_type);
-        const timeAgo = getTimeAgo(order.created_at);
-        
-        return `
+            return `
             <div class="col-xl-4 col-lg-6 col-md-6">
                 <div class="card order-card ${statusClass}">
                     <div class="order-header">
@@ -490,98 +447,98 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-    }
+        }
 
-    function getStatusBadge(status) {
-        const badges = {
-            pending: '<span class="badge status-pending">Pending</span>',
-            preparing: '<span class="badge status-preparing">Preparing</span>',
-            ready: '<span class="badge status-ready">Ready</span>'
-        };
-        return badges[status] || '';
-    }
+        function getStatusBadge(status) {
+            const badges = {
+                pending: '<span class="badge status-pending">Pending</span>',
+                preparing: '<span class="badge status-preparing">Preparing</span>',
+                ready: '<span class="badge status-ready">Ready</span>'
+            };
+            return badges[status] || '';
+        }
 
-    function getOrderTypeIcon(type) {
-        const icons = {
-            'dine-in': '<i class="fas fa-utensils text-success"></i>',
-            'takeaway': '<i class="fas fa-shopping-bag text-warning"></i>',
-            'delivery': '<i class="fas fa-motorcycle text-info"></i>'
-        };
-        return icons[type] || '<i class="fas fa-question"></i>';
-    }
+        function getOrderTypeIcon(type) {
+            const icons = {
+                'dine-in': '<i class="fas fa-utensils text-success"></i>',
+                'takeaway': '<i class="fas fa-shopping-bag text-warning"></i>',
+                'delivery': '<i class="fas fa-motorcycle text-info"></i>'
+            };
+            return icons[type] || '<i class="fas fa-question"></i>';
+        }
 
-    function getStatusActions(order) {
-        switch(order.status) {
-            case 'pending':
-                return `<button class="btn btn-warning btn-action" onclick="updateOrderStatus('${order.id}', 'preparing')">
+        function getStatusActions(order) {
+            switch (order.status) {
+                case 'pending':
+                    return `<button class="btn btn-warning btn-action" onclick="updateOrderStatus('${order.id}', 'preparing')">
                     <i class="fas fa-play"></i> Start Preparing
                 </button>`;
-            case 'preparing':
-                return `<button class="btn btn-success btn-action" onclick="updateOrderStatus('${order.id}', 'ready')">
+                case 'preparing':
+                    return `<button class="btn btn-success btn-action" onclick="updateOrderStatus('${order.id}', 'ready')">
                     <i class="fas fa-check"></i> Mark Ready
                 </button>`;
-            case 'ready':
-                return `<button class="btn btn-primary btn-action" onclick="completeOrder('${order.id}')">
+                case 'ready':
+                    return `<button class="btn btn-primary btn-action" onclick="completeOrder('${order.id}')">
                     <i class="fas fa-check-circle"></i> Complete Order
                 </button>`;
-            default:
-                return '';
+                default:
+                    return '';
+            }
         }
-    }
 
-    function formatCustomizations(customizations) {
-        if (!customizations || Object.keys(customizations).length === 0) return '';
-        
-        const parts = [];
-        if (customizations.size && customizations.size !== 'small') {
-            parts.push(`Size: ${customizations.size.charAt(0).toUpperCase() + customizations.size.slice(1)}`);
+        function formatCustomizations(customizations) {
+            if (!customizations || Object.keys(customizations).length === 0) return '';
+
+            const parts = [];
+            if (customizations.size && customizations.size !== 'small') {
+                parts.push(`Size: ${customizations.size.charAt(0).toUpperCase() + customizations.size.slice(1)}`);
+            }
+            if (customizations.sugar && customizations.sugar !== '100') {
+                parts.push(`Sugar: ${customizations.sugar === 'no-sugar' ? 'No Sugar' : customizations.sugar + '%'}`);
+            }
+            if (customizations.milk && customizations.milk !== 'regular') {
+                parts.push(`${customizations.milk.charAt(0).toUpperCase() + customizations.milk.slice(1)} Milk`);
+            }
+            if (customizations.toppings && customizations.toppings.length > 0) {
+                parts.push(`Add: ${customizations.toppings.join(', ').replace(/-/g, ' ')}`);
+            }
+
+            return parts.length > 0 ? `<div class="item-customization">${parts.join(' • ')}</div>` : '';
         }
-        if (customizations.sugar && customizations.sugar !== '100') {
-            parts.push(`Sugar: ${customizations.sugar === 'no-sugar' ? 'No Sugar' : customizations.sugar + '%'}`);
+
+        function getTimeAgo(datetime) {
+            const now = new Date();
+            const orderTime = new Date(datetime);
+            const diffMs = now - orderTime;
+            const diffMins = Math.floor(diffMs / 60000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m ago`;
+
+            return orderTime.toLocaleDateString();
         }
-        if (customizations.milk && customizations.milk !== 'regular') {
-            parts.push(`${customizations.milk.charAt(0).toUpperCase() + customizations.milk.slice(1)} Milk`);
+
+        function updateStatistics() {
+            const pending = orders.filter(o => o.status === 'pending').length;
+            const preparing = orders.filter(o => o.status === 'preparing').length;
+            const ready = orders.filter(o => o.status === 'ready').length;
+            const totalValue = orders.reduce((sum, o) => sum + o.total, 0);
+
+            document.getElementById('pending-count').textContent = pending;
+            document.getElementById('preparing-count').textContent = preparing;
+            document.getElementById('ready-count').textContent = ready;
+            document.getElementById('total-value').textContent = `$${totalValue.toFixed(2)}`;
         }
-        if (customizations.toppings && customizations.toppings.length > 0) {
-            parts.push(`Add: ${customizations.toppings.join(', ').replace(/-/g, ' ')}`);
-        }
-        
-        return parts.length > 0 ? `<div class="item-customization">${parts.join(' • ')}</div>` : '';
-    }
 
-    function getTimeAgo(datetime) {
-        const now = new Date();
-        const orderTime = new Date(datetime);
-        const diffMs = now - orderTime;
-        const diffMins = Math.floor(diffMs / 60000);
-        
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        
-        const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m ago`;
-        
-        return orderTime.toLocaleDateString();
-    }
+        // Global functions for button actions
+        window.viewOrderDetails = function(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
 
-    function updateStatistics() {
-        const pending = orders.filter(o => o.status === 'pending').length;
-        const preparing = orders.filter(o => o.status === 'preparing').length;
-        const ready = orders.filter(o => o.status === 'ready').length;
-        const totalValue = orders.reduce((sum, o) => sum + o.total, 0);
-
-        document.getElementById('pending-count').textContent = pending;
-        document.getElementById('preparing-count').textContent = preparing;
-        document.getElementById('ready-count').textContent = ready;
-        document.getElementById('total-value').textContent = `$${totalValue.toFixed(2)}`;
-    }
-
-    // Global functions for button actions
-    window.viewOrderDetails = function(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
-
-        const content = `
+            const content = `
             <div class="row">
                 <div class="col-md-6">
                     <h6>Order Information</h6>
@@ -610,53 +567,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
-        document.getElementById('orderDetailsContent').innerHTML = content;
-        const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
-        modal.show();
-    };
 
-    window.updateOrderStatus = function(orderId, newStatus) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
-
-        document.getElementById('updateOrderId').textContent = orderId;
-        document.getElementById('updateCustomerName').textContent = order.customer_name;
-        document.getElementById('currentStatus').textContent = order.status.toUpperCase();
-        document.getElementById('newStatus').textContent = newStatus.toUpperCase();
-
-        const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
-        modal.show();
-
-        document.getElementById('confirmStatusUpdate').onclick = function() {
-            // Update order status
-            order.status = newStatus;
-            
-            // Reload orders and update statistics
-            loadOrders();
-            updateStatistics();
-            
-            // Close modal
-            modal.hide();
-            
-            // Show success notification
-            alert(`Order #${orderId} status updated successfully!`);
+            document.getElementById('orderDetailsContent').innerHTML = content;
+            const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+            modal.show();
         };
-    };
 
-    window.completeOrder = function(orderId) {
-        if (confirm('Are you sure you want to complete this order? This will remove it from pending orders.')) {
-            // Remove order from pending list
-            orders = orders.filter(o => o.id !== orderId);
-            
-            // Reload orders and update statistics
-            loadOrders();
-            updateStatistics();
-            
-            // Show success notification
-            alert(`Order #${orderId} completed successfully!`);
-        }
-    };
-});
+        window.updateOrderStatus = function(orderId, newStatus) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('updateOrderId').textContent = orderId;
+            document.getElementById('updateCustomerName').textContent = order.customer_name;
+            document.getElementById('currentStatus').textContent = order.status.toUpperCase();
+            document.getElementById('newStatus').textContent = newStatus.toUpperCase();
+
+            const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
+            modal.show();
+
+            document.getElementById('confirmStatusUpdate').onclick = function() {
+                // Update order status
+                order.status = newStatus;
+
+                // Reload orders and update statistics
+                loadOrders();
+                updateStatistics();
+
+                // Close modal
+                modal.hide();
+
+                // Show success notification
+                alert(`Order #${orderId} status updated successfully!`);
+            };
+        };
+
+        window.completeOrder = function(orderId) {
+            if (confirm('Are you sure you want to complete this order? This will remove it from pending orders.')) {
+                // Remove order from pending list
+                orders = orders.filter(o => o.id !== orderId);
+
+                // Reload orders and update statistics
+                loadOrders();
+                updateStatistics();
+
+                // Show success notification
+                alert(`Order #${orderId} completed successfully!`);
+            }
+        };
+    });
 </script>
 @endsection

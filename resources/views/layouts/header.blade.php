@@ -271,7 +271,7 @@
                 <div class="dropdown-header">Switch Workspace</div>
                 @if(session('workspace_role') !== 'sms')
                 <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=sms">
-                  <i class="fas fa-cash-register me-2"></i>Point of Sale
+                  <i class="fas fa-cash-register me-2"></i>Sales Management System
                 </a>
                 @endif
                 @if(session('workspace_role') !== 'inventory')

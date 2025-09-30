@@ -16,7 +16,15 @@ class DashboardController extends Controller
         if ($workspace === 'sms' || $workspace === 'inventory') {
             session(['workspace_role' => $workspace]);
         }
-        return view('dashboard.index');
+
+        // Fetch low stock products
+        $lowStockProducts = \App\Models\Product::whereColumn('current_stock', '<=', 'low_stock_alert')
+            ->where('current_stock', '>', 0)
+            ->orderBy('current_stock', 'asc')
+            ->limit(10)
+            ->get(['id', 'name', 'current_stock']);
+
+        return view('dashboard.index', compact('lowStockProducts'));
     }
     
     /**

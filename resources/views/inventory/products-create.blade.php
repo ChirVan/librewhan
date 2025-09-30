@@ -1,3 +1,7 @@
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 @extends('layouts.app')
 
 @section('title', 'Add New Product')
@@ -125,6 +129,7 @@
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -143,15 +148,30 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert('Product created successfully!');
-            window.location.href = '{{ route("inventory.products.index") }}';
+            Swal.fire({
+                icon: 'success',
+                title: 'Product Created',
+                text: 'Product created successfully!',
+                confirmButtonText: 'OK',
+                timer: 1800
+            }).then(() => {
+                window.location.href = '{{ route("inventory.products.index") }}';
+            });
         } else {
-            alert('Error creating product. Please try again.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error creating product. Please try again.'
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error creating product. Please try again.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error creating product. Please try again.'
+        });
     });
 });
 </script>

@@ -17,6 +17,7 @@ class OrderController extends Controller
     $validated = $request->validate([
         'customer_name' => 'nullable|string|max:255',
         'customer_phone' => 'nullable|string|max:255',
+        'order_type' => 'required|string|in:dine-in,takeaway',
         'payment_mode' => 'required|string',
         'subtotal' => 'nullable|numeric|min:0',
         'total' => 'nullable|numeric|min:0',
@@ -38,6 +39,11 @@ class OrderController extends Controller
         'items.*.milk' => 'nullable|string',
         'items.*.instructions' => 'nullable|string',
     ]);
+
+    // Ensure order_type is always valid
+    if (!in_array($validated['order_type'], ['dine-in', 'takeaway'])) {
+        $validated['order_type'] = 'dine-in';
+    }
 
     // tolerate unauthenticated test calls: prefer validated user_id, then logged-in user id, then null
     $userId = $validated['user_id'] ?? optional(auth())->id() ?? null;
@@ -129,9 +135,29 @@ class OrderController extends Controller
 
     public function pending()
     {
-        // In a real application, you would fetch pending orders from database
-        // For now, we'll use sample data in the view
-        return view('orders.pendingOrder');
+        $orders = \App\Models\Order::with('items')
+            ->whereIn('status', ['pending', 'preparing', 'ready'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $pendingCount = $orders->where('status', 'pending')->count();
+        $preparingCount = $orders->where('status', 'preparing')->count();
+        $readyCount = $orders->where('status', 'ready')->count();
+        $totalValue = $orders->sum('total');
+
+        return view('orders.pendingOrder', compact('orders', 'pendingCount', 'preparingCount', 'readyCount', 'totalValue'));
+
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $order = \App\Models\Order::findOrFail($id);
+        $request->validate([
+            'status' => 'required|string|in:pending,preparing,ready,completed'
+        ]);
+        $order->status = $request->input('status');
+        $order->save();
+        return redirect()->back()->with('success', 'Order status updated!');
     }
 
     public function take()
@@ -212,9 +238,88 @@ class OrderController extends Controller
 
     public function history()
     {
-    // In a real application, you would fetch completed orders from database
-    // You can add pagination, filtering, and sorting here
-    return view('orders.history');
+        // Fetch completed orders, with optional filters and pagination
+        $query = Order::with('items')->where('status', 'completed');
+
+        // Filtering
+        $search = request('search');
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'like', "%$search%")
+                  ->orWhere('customer_name', 'like', "%$search%")
+                  ->orWhere('customer_phone', 'like', "%$search%")
+                  ->orWhere('payment_method', 'like', "%$search%")
+                  ->orWhere('order_type', 'like', "%$search%")
+                  ;
+            });
+        }
+
+        // Date range filter
+        $dateFilter = request('date_filter');
+        $fromDate = request('from_date');
+        $toDate = request('to_date');
+        if ($dateFilter && $dateFilter !== 'custom') {
+            $today = now();
+            switch ($dateFilter) {
+                case 'today':
+                    $query->whereDate('created_at', $today->toDateString());
+                    break;
+                case 'yesterday':
+                    $query->whereDate('created_at', $today->subDay()->toDateString());
+                    break;
+                case 'this-week':
+                    $query->whereBetween('created_at', [$today->startOfWeek(), $today->endOfWeek()]);
+                    break;
+                case 'last-week':
+                    $query->whereBetween('created_at', [$today->subWeek()->startOfWeek(), $today->subWeek()->endOfWeek()]);
+                    break;
+                case 'this-month':
+                    $query->whereMonth('created_at', $today->month)->whereYear('created_at', $today->year);
+                    break;
+                case 'last-month':
+                    $lastMonth = $today->copy()->subMonth();
+                    $query->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year);
+                    break;
+            }
+        } elseif ($dateFilter === 'custom' && $fromDate && $toDate) {
+            $query->whereBetween('created_at', [$fromDate, $toDate]);
+        }
+
+        // Order type filter
+        $typeFilter = request('type_filter');
+        if ($typeFilter && $typeFilter !== 'all') {
+            $query->where('order_type', $typeFilter);
+        }
+
+        // Sorting
+        $sortFilter = request('sort_filter', 'newest');
+        switch ($sortFilter) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'highest':
+                $query->orderBy('total', 'desc');
+                break;
+            case 'lowest':
+                $query->orderBy('total', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+
+        // Pagination
+        $perPage = request('per_page', 25);
+        $orders = $query->paginate($perPage)->appends(request()->query());
+
+        // Statistics
+        $totalOrders = $orders->total();
+        $totalRevenue = $orders->sum('total');
+        $avgOrder = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+        $todayOrders = $orders->filter(function($order) {
+            return $order->created_at->isToday();
+        })->count();
+
+        return view('orders.history', compact('orders', 'totalOrders', 'totalRevenue', 'avgOrder', 'todayOrders'));
     }
 
     // public function store(Request $request)
@@ -299,23 +404,6 @@ class OrderController extends Controller
         return response()->json(['success' => true, 'message' => 'Order deleted successfully']);
     }
 
-    // New methods for order status management
-    public function updateStatus(Request $request, $id)
-    {
-        // Validate the status
-        $request->validate([
-            'status' => 'required|in:pending,preparing,ready,completed'
-        ]);
-
-        // In a real application, you would update the database
-        // For now, we'll return a success response
-        return response()->json([
-            'success' => true, 
-            'message' => 'Order status updated successfully',
-            'order_id' => $id,
-            'new_status' => $request->status
-        ]);
-    }
 
     public function complete($id)
     {

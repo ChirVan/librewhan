@@ -192,55 +192,45 @@
                     </div>
 
                     <!-- Milk Type -->
+                    {{-- 
                     <div class="col-12" id="milkOptions">
-                        <label class="form-label fw-bold mb-1 small">Milk Type</label>
-                        <select class="form-control form-control-sm" name="milk">
-                            <option value="regular" selected>Regular Milk</option>
-                            <option value="almond">Almond (+₱15.00)</option>
-                            <option value="oat">Oat (+₱15.00)</option>
-                            <option value="soy">Soy (+₱10.00)</option>
-                            <option value="coconut">Coconut (+₱10.00)</option>
-                            <option value="skim">Skim Milk</option>
-                        </select>
+                      <label class="form-label fw-bold mb-1 small">Milk Type</label>
+                      <select class="form-control form-control-sm" name="milk">
+                        <option value="regular" selected>Regular Milk</option>
+                        <option value="almond">Almond (+₱15.00)</option>
+                        <option value="oat">Oat (+₱15.00)</option>
+                        <option value="soy">Soy (+₱10.00)</option>
+                        <option value="coconut">Coconut (+₱10.00)</option>
+                        <option value="skim">Skim Milk</option>
+                      </select>
                     </div>
+                    --}}
 
                     <!-- Toppings -->
                     <div class="col-12" id="toppingsOptions">
-                        <label class="form-label fw-bold mb-1 small">Add-ons</label>
-                        <div class="row g-1">
-                            <div class="col-6">
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="extra-shot" id="extra-shot">
-                                    <label class="form-check-label small" for="extra-shot">Extra Shot (+₱15.00)</label>
-                                </div>
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="whipped-cream" id="whipped-cream">
-                                    <label class="form-check-label small" for="whipped-cream">Whipped Cream (+₱10.00)</label>
-                                </div>
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="vanilla-syrup" id="vanilla-syrup">
-                                    <label class="form-check-label small" for="vanilla-syrup">Vanilla Syrup (+₱10.00)</label>
-                                </div>
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="caramel-syrup" id="caramel-syrup">
-                                    <label class="form-check-label small" for="caramel-syrup">Caramel Syrup (+₱10.00)</label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="cinnamon" id="cinnamon">
-                                    <label class="form-check-label small" for="cinnamon">Cinnamon (+₱5.00)</label>
-                                </div>
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="pearls" id="pearls">
-                                    <label class="form-check-label small" for="pearls">Tapioca Pearls (+₱20.00)</label>
-                                </div>
-                                <div class="form-check form-check-sm">
-                                    <input class="form-check-input" type="checkbox" name="toppings" value="jelly" id="jelly">
-                                    <label class="form-check-label small" for="jelly">Coconut Jelly (+₱15.00)</label>
-                                </div>
-                            </div>
-                        </div>
+            <label class="form-label fw-bold mb-1 small">Add-ons</label>
+            <div class="row g-1">
+              <div class="col-6">
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" name="toppings" value="extra-shot" id="extra-shot">
+                  <label class="form-check-label small" for="extra-shot">Extra Shot (+₱15.00)</label>
+                </div>
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" name="toppings" value="whipped-cream" id="whipped-cream">
+                  <label class="form-check-label small" for="whipped-cream">Whipped Cream (+₱10.00)</label>
+                </div>
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" name="toppings" value="creamer" id="creamer">
+                  <label class="form-check-label small" for="creamer">Creamer (+₱10.00)</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check form-check-sm">
+                  <input class="form-check-input" type="checkbox" name="toppings" value="pearls" id="pearls">
+                  <label class="form-check-label small" for="pearls">Tapioca Pearls (+₱20.00)</label>
+                </div>
+              </div>
+            </div>
                     </div>
 
                     <!-- Special Instructions -->
@@ -454,6 +444,26 @@
 */
 
 (function () {
+  // Calculate and update change display
+  window.calculateChange = function() {
+    const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
+    const changeAmountEl = document.getElementById('changeAmount');
+    const customerPaymentEl = document.getElementById('customerPayment');
+    const totalEl = document.getElementById('total');
+    if (!changeAmountEl || !customerPaymentEl || !totalEl) return;
+    if (paymentMode !== 'cash') {
+      changeAmountEl.textContent = '₱0.00';
+      return;
+    }
+    const total = parseFloat(totalEl.textContent.replace(/[^\d.]/g, '')) || 0;
+    const paid = parseFloat(customerPaymentEl.value) || 0;
+    const change = paid - total;
+    changeAmountEl.textContent = `₱${currency(change >= 0 ? change : 0)}`;
+    // Optionally style for negative/positive
+    changeAmountEl.classList.remove('change-positive', 'change-negative');
+    if (change > 0) changeAmountEl.classList.add('change-positive');
+    else if (change < 0) changeAmountEl.classList.add('change-negative');
+  };
   const productsApiUrl = "{{ url('/inventory/api/products') }}";
   const categoriesApiUrl = "{{ url('/inventory/api/products/_meta/categories') }}";
 
@@ -553,11 +563,12 @@
   function renderCategoryFilters() {
     if (!$categoryFilters) return;
     clearChildren($categoryFilters);
+    // All button with icon
     const allBtn = document.createElement('button');
     allBtn.type = 'button';
     allBtn.className = 'btn btn-outline-primary btn-sm category-filter active';
     allBtn.dataset.category = 'All';
-    allBtn.textContent = 'All';
+    allBtn.innerHTML = `${determineIconHtml('all')} <span class="ms-1">All</span>`;
     $categoryFilters.appendChild(allBtn);
 
     allCategories.forEach(c => {
@@ -565,7 +576,7 @@
       b.type = 'button';
       b.className = 'btn btn-outline-primary btn-sm category-filter';
       b.dataset.category = c.name;
-      b.textContent = c.name;
+      b.innerHTML = `${determineIconHtml(c.name)} <span class="ms-1">${escapeHtml(c.name)}</span>`;
       $categoryFilters.appendChild(b);
     });
 
@@ -650,10 +661,18 @@
 
   function determineIconHtml(category) {
     const cat = (category || '').toString().toLowerCase();
-    if (cat.includes('coffee')) return '<i class="fas fa-coffee fa-lg text-brown"></i>';
+    // Snacks: keep their own icon
+    if (cat.includes('snack')) return '<i class="fas fa-utensils fa-lg text-muted"></i>';
+    // Coffee, frappe, fruit tea, milk tea: use coffee icon
+    if (
+      cat.includes('coffee') ||
+      cat.includes('frappe') ||
+      cat.includes('fruit tea') ||
+      cat.includes('milk tea') ||
+      cat.includes('tea')
+    ) return '<i class="fas fa-coffee fa-lg text-brown"></i>';
     if (cat.includes('pastry')) return '<i class="fas fa-cookie-bite fa-lg text-warning"></i>';
     if (cat.includes('food')) return '<i class="fas fa-hamburger fa-lg text-success"></i>';
-    if (cat.includes('frappe') || cat.includes('tea')) return '<i class="fas fa-mug-hot fa-lg text-info"></i>';
     return '<i class="fas fa-utensils fa-lg text-muted"></i>';
   }
 
@@ -733,16 +752,38 @@
   /* --------- cart render & events --------- */
   function renderCart() {
     // show/hide
+    const paymentSection = document.getElementById('payment-section');
+    const changeDisplay = document.getElementById('changeDisplay');
+    const orderSummary = document.getElementById('order-summary');
+    const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
     if (!cart.length) {
       if ($cartEmpty) $cartEmpty.style.display = '';
       if ($cartItemsContainer) { $cartItemsContainer.style.display = 'none'; $cartItemsContainer.innerHTML = ''; }
       if ($subtotalEl) $subtotalEl.textContent = `₱0.00`;
       if ($totalEl) $totalEl.textContent = `₱0.00`;
+      if (paymentSection) paymentSection.style.display = 'none';
+      if (changeDisplay) changeDisplay.style.display = 'none';
+      if (orderSummary) orderSummary.style.display = 'none';
       return;
     }
 
     if ($cartEmpty) $cartEmpty.style.display = 'none';
     if ($cartItemsContainer) $cartItemsContainer.style.display = '';
+    if (paymentSection) paymentSection.style.display = '';
+    if (orderSummary) orderSummary.style.display = '';
+
+    // Show change display only for cash payment
+    if (changeDisplay) {
+      if (paymentMode === 'cash') {
+        changeDisplay.style.display = '';
+        window.calculateChange();
+      } else {
+        changeDisplay.style.display = 'none';
+        // Reset change field
+        const changeAmountEl = document.getElementById('changeAmount');
+        if (changeAmountEl) changeAmountEl.textContent = '₱0.00';
+      }
+    }
 
     // render items
     $cartItemsContainer.innerHTML = cart.map((item, idx) => {
@@ -800,13 +841,14 @@
   /* --------- order processing (existing handler uses /orders/store) --------- */
   $processOrderBtn.addEventListener('click', async function () {
     if (!cart.length) { alert('Cart is empty!'); return; }
-    const customerName = document.getElementById('customerName')?.value || null;
-    const orderType = document.getElementById('orderType')?.value || 'dine-in';
-    const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
-    const subtotal = parseFloat($subtotalEl.textContent.replace(/[^\d.]/g, '')) || 0;
-    const total = parseFloat($totalEl.textContent.replace(/[^\d.]/g, '')) || 0;
-    const amountPaid = parseFloat($customerPayment?.value) || total;
-    const changeDue = amountPaid - total;
+  const customerName = document.getElementById('customerName')?.value || null;
+  let orderType = document.getElementById('orderType')?.value;
+  if (orderType !== 'dine-in' && orderType !== 'takeaway') orderType = 'dine-in';
+  const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
+  const subtotal = parseFloat($subtotalEl.textContent.replace(/[^\d.]/g, '')) || 0;
+  const total = parseFloat($totalEl.textContent.replace(/[^\d.]/g, '')) || 0;
+  const amountPaid = parseFloat($customerPayment?.value) || total;
+  const changeDue = amountPaid - total;
 
     const items = cart.map(item => ({
       product_id: item.product_id,
@@ -863,7 +905,6 @@
   // You already have openCustomizationModal(product) in your blade. We will wrap/augment it so currentProduct gets set.
   const originalOpenCustomizationModal = window.openCustomizationModal;
   window.openCustomizationModal = function (product) {
-    // product can be plain object from dataset with price_tiers or base_price
     currentProduct = {
       id: product.id,
       name: product.name,
@@ -872,6 +913,123 @@
       description: product.description ?? '',
       category: product.category ?? ''
     };
+
+
+    // Modal field references
+    const cat = (currentProduct.category || '').toLowerCase();
+    const sizeOptionsDiv = document.getElementById('sizeOptions');
+    const sugarOptionsDiv = document.getElementById('sugarOptions');
+    const iceOptionsDiv = document.getElementById('iceOptions');
+    const milkOptionsDiv = document.getElementById('milkOptions');
+    const toppingsOptionsDiv = document.getElementById('toppingsOptions');
+
+    if (cat.includes('snacks')) {
+      // Snacks: Hide all except quantity and notes
+      if (sizeOptionsDiv) sizeOptionsDiv.style.display = 'none';
+      if (sugarOptionsDiv) sugarOptionsDiv.style.display = 'none';
+      if (iceOptionsDiv) iceOptionsDiv.style.display = 'none';
+      if (milkOptionsDiv) milkOptionsDiv.style.display = 'none';
+      if (toppingsOptionsDiv) toppingsOptionsDiv.style.display = 'none';
+      // Show notes
+      const notesDiv = document.querySelector('textarea[name="instructions"]')?.parentElement;
+      if (notesDiv) notesDiv.style.display = '';
+      // Add quantity input if not present
+      let qtyInput = document.getElementById('snacks-qty-input');
+      if (!qtyInput) {
+        qtyInput = document.createElement('div');
+        qtyInput.className = 'col-12';
+        qtyInput.innerHTML = `<label class="form-label fw-bold mb-1 small">Quantity</label><input type="number" class="form-control" name="snacks-qty" id="snacks-qty-input" min="1" value="1">`;
+        notesDiv?.parentElement?.insertBefore(qtyInput, notesDiv);
+      } else {
+        qtyInput.style.display = '';
+      }
+  } else if (cat.includes('frappe')) {
+      // Frappe: Only 12oz and 16oz, prices 99 and 109
+      if (sizeOptionsDiv) {
+        sizeOptionsDiv.style.display = '';
+        sizeOptionsDiv.innerHTML = `
+          <label class=\"form-label fw-bold mb-1 small\">Size</label>
+          <div class=\"btn-group w-100 btn-group-sm\" role=\"group\">\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-12oz\" value=\"0\" checked>\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-12oz\">12oz<br><small>₱99</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-16oz\" value=\"1\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-16oz\">16oz<br><small>₱109</small></label>\n          </div>\n        `;
+        currentProduct.price_tiers = [99, 109];
+        currentProduct.base_price = 99;
+      }
+      if (sugarOptionsDiv) sugarOptionsDiv.style.display = '';
+      if (iceOptionsDiv) iceOptionsDiv.style.display = '';
+      if (milkOptionsDiv) milkOptionsDiv.style.display = '';
+      if (toppingsOptionsDiv) toppingsOptionsDiv.style.display = '';
+      // Remove snacks qty input if present
+      let qtyInput = document.getElementById('snacks-qty-input');
+      if (qtyInput) qtyInput.style.display = 'none';
+  } else if (cat.includes('iced coffee')) {
+      // Iced Coffee: Only 12oz and 16oz, prices 89 and 99
+      if (sizeOptionsDiv) {
+        sizeOptionsDiv.style.display = '';
+        sizeOptionsDiv.innerHTML = `
+          <label class=\"form-label fw-bold mb-1 small\">Size</label>
+          <div class=\"btn-group w-100 btn-group-sm\" role=\"group\">\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-12oz\" value=\"0\" checked>\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-12oz\">12oz<br><small>₱89</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-16oz\" value=\"1\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-16oz\">16oz<br><small>₱99</small></label>\n          </div>\n        `;
+        currentProduct.price_tiers = [89, 99];
+        currentProduct.base_price = 89;
+      }
+      if (sugarOptionsDiv) sugarOptionsDiv.style.display = '';
+      if (iceOptionsDiv) iceOptionsDiv.style.display = '';
+      if (milkOptionsDiv) milkOptionsDiv.style.display = '';
+      if (toppingsOptionsDiv) toppingsOptionsDiv.style.display = '';
+      // Remove snacks qty input if present
+      let qtyInput = document.getElementById('snacks-qty-input');
+      if (qtyInput) qtyInput.style.display = 'none';
+  } else if (cat.includes('hot coffee')) {
+      // Hot Coffee: Only 12oz and 16oz, prices 60 and 75
+      if (sizeOptionsDiv) {
+        sizeOptionsDiv.style.display = '';
+        sizeOptionsDiv.innerHTML = `
+          <label class=\"form-label fw-bold mb-1 small\">Size</label>
+          <div class=\"btn-group w-100 btn-group-sm\" role=\"group\">\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-12oz\" value=\"0\" checked>\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-12oz\">12oz<br><small>₱60</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-16oz\" value=\"1\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-16oz\">16oz<br><small>₱75</small></label>\n          </div>\n        `;
+        currentProduct.price_tiers = [60, 75];
+        currentProduct.base_price = 60;
+      }
+      if (sugarOptionsDiv) sugarOptionsDiv.style.display = '';
+      if (iceOptionsDiv) iceOptionsDiv.style.display = '';
+      if (milkOptionsDiv) milkOptionsDiv.style.display = '';
+      if (toppingsOptionsDiv) toppingsOptionsDiv.style.display = '';
+      // Remove snacks qty input if present
+      let qtyInput = document.getElementById('snacks-qty-input');
+      if (qtyInput) qtyInput.style.display = 'none';
+    } else if (cat.includes('fruit tea') || cat.includes('milk tea')) {
+      // Fruit Tea & Milk Tea: S/M/L prices 39, 49, 59
+      if (sizeOptionsDiv) {
+        sizeOptionsDiv.style.display = '';
+        sizeOptionsDiv.innerHTML = `
+          <label class=\"form-label fw-bold mb-1 small\">Size</label>
+          <div class=\"btn-group w-100 btn-group-sm\" role=\"group\">\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-small\" value=\"0\" checked>\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-small\">S<br><small>₱39</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-medium\" value=\"1\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-medium\">M<br><small>₱49</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-large\" value=\"2\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-large\">L<br><small>₱59</small></label>\n          </div>\n        `;
+        currentProduct.price_tiers = [39, 49, 59];
+        currentProduct.base_price = 39;
+      }
+      if (sugarOptionsDiv) sugarOptionsDiv.style.display = '';
+      if (iceOptionsDiv) iceOptionsDiv.style.display = '';
+      if (milkOptionsDiv) milkOptionsDiv.style.display = '';
+      if (toppingsOptionsDiv) toppingsOptionsDiv.style.display = '';
+      // Remove snacks qty input if present
+      let qtyInput = document.getElementById('snacks-qty-input');
+      if (qtyInput) qtyInput.style.display = 'none';
+    } else {
+      // All other categories: Default size options
+      if (sizeOptionsDiv) {
+        sizeOptionsDiv.style.display = '';
+        sizeOptionsDiv.innerHTML = `
+          <label class=\"form-label fw-bold mb-1 small\">Size</label>
+          <div class=\"btn-group w-100 btn-group-sm\" role=\"group\">\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-small\" value=\"0\" checked>\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-small\">S<br><small>₱49</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-medium\" value=\"1\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-medium\">M<br><small>₱59</small></label>\n            <input type=\"radio\" class=\"btn-check\" name=\"size\" id=\"size-large\" value=\"2\">\n            <label class=\"btn btn-outline-primary py-1\" for=\"size-large\">L<br><small>₱69</small></label>\n          </div>\n        `;
+        currentProduct.price_tiers = [49, 59, 69];
+        currentProduct.base_price = 49;
+      }
+      if (sugarOptionsDiv) sugarOptionsDiv.style.display = '';
+      if (iceOptionsDiv) iceOptionsDiv.style.display = '';
+      if (milkOptionsDiv) milkOptionsDiv.style.display = '';
+      if (toppingsOptionsDiv) toppingsOptionsDiv.style.display = '';
+      // Remove snacks qty input if present
+      let qtyInput = document.getElementById('snacks-qty-input');
+      if (qtyInput) qtyInput.style.display = 'none';
+    }
+
     // call original (keeps the UI you already made)
     if (typeof originalOpenCustomizationModal === 'function') {
       originalOpenCustomizationModal(product);

@@ -18,7 +18,53 @@ class SalesReportController extends Controller
     public function index()
     {
         // Admin dashboard (sales)
-        return view('sales.report');
+        $from = request('from_date') ? Carbon::parse(request('from_date'))->startOfDay() : Carbon::now()->startOfMonth();
+        $to = request('to_date') ? Carbon::parse(request('to_date'))->endOfDay() : Carbon::now()->endOfDay();
+
+        // Orders in range
+        $orders = Order::whereBetween('created_at', [$from, $to])->get();
+
+        $totalRevenue = $orders->sum('total');
+        $totalOrders = $orders->count();
+        $avgOrder = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+        $uniqueCustomers = $orders->whereNotNull('customer_name')->unique('customer_name')->count();
+
+        // Top products by quantity and sales
+        $topProducts = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->whereBetween('orders.created_at', [$from, $to])
+            ->groupBy('products.id', 'products.name')
+            ->selectRaw('products.id, products.name, COALESCE(SUM(order_items.qty * order_items.price),0) as total_sales, COALESCE(SUM(order_items.qty),0) as total_qty')
+            ->orderByDesc('total_sales')
+            ->limit(10)
+            ->get();
+
+        // Payment method stats
+        $paymentRows = $orders->groupBy('payment_mode');
+        $paymentStats = [];
+        $mostUsedPayment = null;
+        $maxCount = 0;
+        foreach ($paymentRows as $method => $group) {
+            $count = $group->count();
+            $amount = $group->sum('total');
+            $percent = $totalOrders > 0 ? round(($count / $totalOrders) * 100, 1) : 0;
+            $paymentStats[] = [
+                'method' => $method ?? 'Unknown',
+                'count' => $count,
+                'amount' => $amount,
+                'percent' => $percent,
+            ];
+            if ($count > $maxCount) {
+                $maxCount = $count;
+                $mostUsedPayment = $method ?? 'Unknown';
+            }
+        }
+
+        return view('sales.report', compact(
+            'totalRevenue', 'totalOrders', 'avgOrder', 'uniqueCustomers',
+            'topProducts', 'paymentStats', 'mostUsedPayment'
+        ));
     }
 
     public function smsIndex()
