@@ -1,6 +1,8 @@
 <?php
 
+use Laravel\Fortify\Features1;
 use Laravel\Jetstream\Features;
+use Laravel\Fortify\Features as FortifyFeatures;
 use Laravel\Jetstream\Http\Middleware\AuthenticateSession;
 
 return [
@@ -61,7 +63,13 @@ return [
         // Features::termsAndPrivacyPolicy(),
         Features::profilePhotos(),
         Features::api(),
-        // Features::teams(['invitations' => true]),
+
+        // THIS SHOULD BE IN config/fortify.php FOR SOME REASON IT WORKS HERE, SO
+        FortifyFeatures::twoFactorAuthentication([
+            'confirm' => true, // require password confirmation to enable/disable (set false to skip)
+            'window' => 0,
+        ]),
+        Features::teams(['invitations' => true]),
         Features::accountDeletion(),
     ],
 

@@ -240,7 +240,7 @@
                                         <div class="product-category">{{ $product->category ?? '' }}</div>
                                     </div>
                                     <div class="product-stats">
-                                        <div class="product-sales">${{ number_format($product->total_sales, 2) }}</div>
+                                        <div class="product-sales">₱{{ number_format($product->total_sales, 2) }}</div>
                                         <div class="product-quantity">{{ $product->total_qty }} sold</div>
                                     </div>
                                 </div>
@@ -481,9 +481,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function setSummary(summary) {
         // Accept both nested and root formats
         const s = summary || {};
-        document.getElementById('totalRevenue').textContent = s.total_revenue ? `$${Number(s.total_revenue).toLocaleString()}` : (s.totalRevenue ? `$${Number(s.totalRevenue).toLocaleString()}` : '$0.00');
+        document.getElementById('totalRevenue').textContent = s.total_revenue ? `₱${Number(s.total_revenue).toLocaleString()}` : (s.totalRevenue ? `₱${Number(s.totalRevenue).toLocaleString()}` : '₱0.00');
         document.getElementById('totalOrders').textContent = s.total_orders ?? s.totalOrders ?? '0';
-        document.getElementById('averageOrder').textContent = s.average_order ? `$${Number(s.average_order).toFixed(2)}` : (s.averageOrder ? `$${Number(s.averageOrder).toFixed(2)}` : '$0.00');
+        document.getElementById('averageOrder').textContent = s.average_order ? `₱${Number(s.average_order).toFixed(2)}` : (s.averageOrder ? `₱${Number(s.averageOrder).toFixed(2)}` : '₱0.00');
         document.getElementById('totalCustomers').textContent = s.total_customers ?? s.totalCustomers ?? '0';
         // growth fields if present
         document.getElementById('revenueGrowth').innerHTML = s.growth?.revenue ? `<i class="fas fa-arrow-up"></i> +${s.growth.revenue}%` : (s.growth?.revenue ? `<i class="fas fa-arrow-up"></i> +${s.growth.revenue}%` : '—');
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTrendChartDataFromApi(trend) {
         if (!trend) return;
         const labels = trend.labels ?? (trend.labels || []);
-        const data = trend.data ?? (trend.data || []);
+        const data = trend.data ?? (trend.data || []);  
         charts.salesTrend.data.labels = labels;
         charts.salesTrend.data.datasets[0].data = data;
         charts.salesTrend.update();
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="product-category">${p.category ?? p.category_name ?? ''}</div>
                 </div>
                 <div class="product-stats">
-                    <div class="product-sales">$${(p.sales ?? p.total_sales ?? 0).toLocaleString()}</div>
+                    <div class="product-sales">${(p.sales ?? p.total_sales ?? 0).toLocaleString()}</div>
                     <div class="product-quantity">${p.quantity ?? p.total_quantity ?? 0} sold</div>
                 </div>
             </div>

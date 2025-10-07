@@ -130,7 +130,7 @@
     <script src="{{ asset('assets/js/kaiadmin.min.js') }}"></script>
 
     @stack('scripts')
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @livewireScripts
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   </body>
 </html>

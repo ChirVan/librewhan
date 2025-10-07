@@ -35,7 +35,7 @@
     @endif
 
     <div class="d-flex align-items-center">
-      <button class="btn btn-outline-primary" type="button" x-data @click="$wire.confirmLogout()">Log Out Other Browser Sessions</button>
+      <button class="btn btn-outline-primary" type="button" wire:click="$set('confirmingLogout', true)">Log Out Other Browser Sessions</button>
       {{-- $wire.confirmLogout() — Jetstream Livewire components usually provide a method to open the confirmation; if your Livewire class uses a different method name, change the call to match (confirmLogout vs confirmingLogout). If no such method exists, clicking the button can be changed to x-on:click="show = true" and @entangle can be used to bind confirmingLogout. --}}
 
       {{-- Modal for password confirmation --}}

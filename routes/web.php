@@ -9,6 +9,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\DashboardSalesController;
+use App\Http\Controllers\DashboardStatsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,9 +57,7 @@ Route::get('/', function () {
 })->name('root');
 
 // Receipt Page for SMS
-Route::middleware(['auth','role:admin'])->get('/sales/receipt/{order}', [\App\Http\Controllers\SalesReportController::class, 'receiptView'])->name('sales.receipt');
-
-
+Route::middleware(['auth','role:admin'])->get('/sales/receipt/{order}', [SalesReportController::class, 'receiptView'])->name('sales.receipt');
 /*
 |------------------------------
 | Protected routes (auth)
@@ -66,8 +66,14 @@ Route::middleware(['auth','role:admin'])->get('/sales/receipt/{order}', [\App\Ht
 */
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/sms', [DashboardController::class, 'smsIndex'])->name('dashboard.sms');
-    Route::get('/dashboard/inventory', [DashboardController::class, 'inventoryIndex'])->name('dashboard.inventory');
+    Route::get('/dashboard/sales', [DashboardSalesController::class, 'index'])->name('dashboard.sales'); // For the Sales Prediction Algorithm
+    Route::get('/dashboard/sales-stats', [DashboardStatsController::class, 'stats'])->name('sales.dashboardStats'); // Dashboard Chart
+
+    // TODO: Useless so delete if this doesn't cause errors when commented out
+    // Route::get('/dashboard/sms', [DashboardController::class, 'smsIndex'])->name('dashboard.sms');
+    // Route::get('/dashboard/inventory', [DashboardController::class, 'inventoryIndex'])->name('dashboard.inventory');
+
+    Route::get('/api/dashboard/stats', [DashboardSalesController::class, 'stats'])->name('api.sales.dashboardStats');
 
     // Order management routes (barista + admin)
     Route::middleware('role:admin|barista')->prefix('orders')->name('orders.')->group(function () {
@@ -216,15 +222,15 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserManagementController::class);
         // TODO: resource('users') already registers CRUD routes for users. The individual routes below are duplicates and can be removed later.
         // Admin User Management
-        Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [\App\Http\Controllers\Admin\UserManagementController::class, 'create'])->name('users.create');
-        Route::post('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'store'])->name('users.store');
-        Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserManagementController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('users.update');
-        Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'destroy'])->name('users.destroy');
+        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
 
-        Route::post('/users/{user}/reset-password', [\App\Http\Controllers\Admin\UserManagementController::class, 'resetPassword'])->name('users.resetPassword');
-        Route::patch('/users/{user}/toggle-status', [\App\Http\Controllers\Admin\UserManagementController::class, 'toggleStatus'])->name('users.toggleStatus');
+        Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.resetPassword');
+        Route::patch('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggleStatus');
 
 
     });

@@ -1,10 +1,143 @@
 Results
 
-Drop-in script — replace the current SMS/Cart scripts in takeOrder.blade.php with this whole block
-- done
+Immediate tests (do these now in your browser DevTools Console while logged in)
+1. Run this exact command (sends session cookie so you won't get 401):
+- 
+STATUS 200 OK CT= application/json debugger eval code:3:13
+JSON 
+Object { stats: {…}, monthly_series: (12) […], recent_orders: (5) […] }
+debugger eval code:5:19
 
-Dashboard Recent Orders "Items" fix (small improvement)
-- done, it's working
+- wow it returned something now, but it's still not rendering
 
-Let's continue making takeOrders.blade.php functional with Javascript
-- Now if you remember, I provided you the product details
+Option B — (proper long-term fix): Remove/rename duplicate route names
+- chose this option, it works now
+
+Paste-ready robust JS (full replacement snippet)
+- done, here's the script part of dashboard/index.blade.php for your reference
+/**/
+
+@push('scripts')
+<script>
+(async function () {
+  const statsRoute = "/api/dashboard/stats"; // explicit API endpoint
+
+  function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+  try {
+    const res = await fetch(statsRoute, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    console.log('Dashboard stats fetch', res.status, res.statusText, res.headers.get('content-type'));
+    if (!res.ok) {
+      const txt = await res.text().catch(()=>res.statusText);
+      console.error('Dashboard stats HTTP error', res.status, txt);
+      return;
+    }
+    const json = await res.json().catch(async e => { const t = await res.text(); throw new Error('Invalid JSON: ' + t); });
+
+    // Logging to help debug shapes
+    console.log('dashboard.stats payload', json);
+
+    const stats = json.stats ?? {};
+    setText('statPending', stats.pending_orders ?? 0);
+    setText('statTodaySales', stats.today_sales ? '₱ ' + Number(stats.today_sales).toLocaleString() : '₱ 0');
+    setText('statLowStocks', stats.low_stock_count ?? 0);
+    setText('statWeeklySales', stats.weekly_sales ? '₱ ' + Number(stats.weekly_sales).toLocaleString() : '₱ 0');
+
+    // Recent orders render
+    const rows = json.recent_orders ?? [];
+    const tbody = document.getElementById('recentOrdersBody');
+    if (tbody) {
+      tbody.innerHTML = (rows || []).map(r => {
+        const items = (r.items || []).map(it => it.name ?? '').join(', ');
+        return `<tr>
+          <td>${r.order_number ?? ('ORD-'+(r.id||''))}</td>
+          <td>${r.customer_name ?? r.customer ?? ''}</td>
+          <td>${items}</td>
+          <td>₱ ${Number(r.total ?? r.amount ?? 0).toLocaleString()}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="4" class="text-center text-muted">No recent orders</td></tr>';
+    }
+
+    // call your chart initializer
+    if (typeof initMonthlyChart === 'function') {
+      initMonthlyChart(json.monthly_series ?? null);
+    } else {
+      // fallback: create small inline function if missing
+      console.warn('initMonthlyChart not found — ensure chart init function exists.');
+    }
+
+  } catch (err) {
+    console.error('Failed loading dashboard stats', err);
+  }
+
+  // Chart init reused from your file: ensure createChart can accept series or use fallback
+  function initMonthlyChart(series) {
+    var canvas = document.getElementById('monthlySalesChart');
+    if (!canvas) return;
+
+    if (window.monthlySalesChart && typeof window.monthlySalesChart.destroy === 'function') {
+      window.monthlySalesChart.destroy();
+      window.monthlySalesChart = null;
+    }
+
+    function createChart(dataSeries) {
+      try {
+        var ctx = canvas.getContext('2d');
+        if (typeof Chart === 'undefined') {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+          script.onload = function () { createChart(dataSeries); };
+          document.head.appendChild(script);
+          return;
+        }
+
+        const data = dataSeries ?? Array.from({length:12}, () => 0);
+        const barColor = 'rgba(23,125,255,0.95)';
+        const border = 'rgba(8,63,130,1)';
+
+        window.monthlySalesChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+            datasets: [{
+              label: 'Monthly Sales (₱)',
+              data: data,
+              backgroundColor: Array(12).fill(barColor),
+              borderColor: Array(12).fill(border),
+              borderWidth: 1,
+              borderRadius: 6,
+              borderSkipped: false,
+              barThickness: 'flex'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: true } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { callback: function(value) { return '₱' + value.toLocaleString(); } }
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Chart init error', err);
+      }
+    }
+
+    createChart(series);
+  }
+
+  // Run
+  loadStatsAndRecent();
+})();
+</script>
+@endpush
+
+/**/
+
+- also, does low sellers show all those products that has 0 sold
+
+Let's keep debugging

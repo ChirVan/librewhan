@@ -188,157 +188,127 @@
       </div>
     </div>
 
+    @include('dashboard.sales')
+
   </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-(function () {
-  const statsRoute = "{{ route('sales.dashboardStats') }}";
-  const recentOrdersRoute = "{{ route('sales.report.salesData') }}"; // reusing salesData endpoint for listing
+(async function () {
+  const statsRoute = "/api/dashboard/stats"; // explicit API endpoint
 
   function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
-  async function loadStats() {
-    try {
-      const res = await fetch(statsRoute);
-      const json = await res.json();
-      const stats = json.stats ?? {};
-      setText('statPending', stats.pending_orders ?? stats.pendingOrders ?? 0);
-      setText('statTodaySales', stats.today_sales ? '₱ ' + Number(stats.today_sales).toLocaleString() : '₱ 0');
-      setText('statLowStocks', stats.low_stock_count ?? stats.lowStockCount ?? 0);
-      setText('statWeeklySales', stats.monthly_sales ? '₱ ' + Number(stats.monthly_sales).toLocaleString() : '₱ 0');
-
-      // Fill recent orders (if API provides)
-      loadRecentOrders();
-      initMonthlyChart(stats.monthly_series ?? null);
-    } catch (err) {
-      console.error('Failed to load dashboard stats', err);
+  try {
+    const res = await fetch(statsRoute, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    console.log('Dashboard stats fetch', res.status, res.statusText, res.headers.get('content-type'));
+    if (!res.ok) {
+      const txt = await res.text().catch(()=>res.statusText);
+      console.error('Dashboard stats HTTP error', res.status, txt);
+      return;
     }
-  }
+    const json = await res.json().catch(async e => { const t = await res.text(); throw new Error('Invalid JSON: ' + t); });
 
-  async function loadRecentOrders() {
-    try {
-      const res = await fetch(recentOrdersRoute + '?per_page=5');
-      const json = await res.json();
-      const rows = json.data ?? json;
-      const tbody = document.getElementById('recentOrdersBody');
-      tbody.innerHTML = (rows || []).slice(0,5).map(r => {
-        // try to build readable items string
-        let itemsText = '';
-        if (Array.isArray(r.items)) {
-          itemsText = r.items.map(it => it.name ?? it.item_name ?? (typeof it === 'string' ? it : '')).join(', ');
-        } else if (typeof r.items === 'string') {
-          itemsText = r.items;
-        } else if (r.items && typeof r.items === 'object') {
-          // maybe items_list or items_text fields
-          itemsText = (r.items_list || r.items_text || JSON.stringify(r.items)).toString();
-        } else {
-          itemsText = '';
-        }
+    // Logging to help debug shapes
+    console.log('dashboard.stats payload', json);
+
+    const stats = json.stats ?? {};
+    setText('statPending', stats.pending_orders ?? 0);
+    setText('statTodaySales', stats.today_sales ? '₱ ' + Number(stats.today_sales).toLocaleString() : '₱ 0');
+    setText('statLowStocks', stats.low_stock_count ?? 0);
+    setText('statWeeklySales', stats.weekly_sales ? '₱ ' + Number(stats.weekly_sales).toLocaleString() : '₱ 0');
+
+    // Recent orders render
+    const rows = json.recent_orders ?? [];
+    const tbody = document.getElementById('recentOrdersBody');
+    if (tbody) {
+      tbody.innerHTML = (rows || []).map(r => {
+        const items = (r.items || []).map(it => it.name ?? '').join(', ');
         return `<tr>
-          <td>${r.order_id ?? r.order_number ?? 'ORD-'+(r.id||'')}</td>
-          <td>${r.customer ?? r.customer_name ?? ''}</td>
-          <td>${itemsText}</td>
-          <td>₱ ${Number(r.amount ?? r.total ?? 0).toLocaleString()}</td>
+          <td>${r.order_number ?? ('ORD-'+(r.id||''))}</td>
+          <td>${r.customer_name ?? r.customer ?? ''}</td>
+          <td>${items}</td>
+          <td>₱ ${Number(r.total ?? r.amount ?? 0).toLocaleString()}</td>
         </tr>`;
-      }).join('');
-
-    } catch (err) {
-      console.warn('No recent orders or failed to fetch', err);
+      }).join('') || '<tr><td colspan="4" class="text-center text-muted">No recent orders</td></tr>';
     }
+
+    // call your chart initializer
+    if (typeof initMonthlyChart === 'function') {
+      initMonthlyChart(json.monthly_series ?? null);
+    } else {
+      // fallback: create small inline function if missing
+      console.warn('initMonthlyChart not found — ensure chart init function exists.');
+    }
+
+  } catch (err) {
+    console.error('Failed loading dashboard stats', err);
   }
 
-  async function loadLowStockProducts() {
-    // quick attempt: fetch inventory.stock endpoint if exists (fallback to empty)
-    try {
-      const res = await fetch("{{ route('inventory.stocks.index') }}");
-      // if HTML page returned, skip
-      if (res.headers.get('content-type')?.includes('application/json')) {
-        const json = await res.json();
-        const rows = json.data ?? json;
-        const body = document.getElementById('lowStockBody');
-        body.innerHTML = (rows || []).slice(0,5).map(p => `<tr><td>${p.sku ?? p.id}</td><td>${p.name}</td><td>${p.current_stock}</td></tr>`).join('');
-      } else {
-        // skip when page returned
-      }
-    } catch (err) {
-      // ignore
-    }
-  }
-
+  // Chart init reused from your file: ensure createChart can accept series or use fallback
   function initMonthlyChart(series) {
-  var canvas = document.getElementById('monthlySalesChart');
-  if (!canvas) return;
+    var canvas = document.getElementById('monthlySalesChart');
+    if (!canvas) return;
 
-  // destroy previous chart if present
-  if (window.monthlySalesChart && typeof window.monthlySalesChart.destroy === 'function') {
-    window.monthlySalesChart.destroy();
-    window.monthlySalesChart = null;
-  }
+    if (window.monthlySalesChart && typeof window.monthlySalesChart.destroy === 'function') {
+      window.monthlySalesChart.destroy();
+      window.monthlySalesChart = null;
+    }
 
-  function createChart(dataSeries) {
-    try {
-      var ctx = canvas.getContext('2d');
-      if (typeof Chart === 'undefined') {
-        var script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-        script.onload = function () { createChart(dataSeries); };
-        document.head.appendChild(script);
-        return;
-      }
+    function createChart(dataSeries) {
+      try {
+        var ctx = canvas.getContext('2d');
+        if (typeof Chart === 'undefined') {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+          script.onload = function () { createChart(dataSeries); };
+          document.head.appendChild(script);
+          return;
+        }
 
-      const data = dataSeries ?? [15420,18250,22100,19850,25400,28750,31200,29800,33500,28900,31800,35200];
-      // Use a solid visible color (works on both light/dark backgrounds)
-      const barColor = 'rgba(23,125,255,0.95)';
-      const border = 'rgba(8,63,130,1)';
+        const data = dataSeries ?? Array.from({length:12}, () => 0);
+        const barColor = 'rgba(23,125,255,0.95)';
+        const border = 'rgba(8,63,130,1)';
 
-      window.monthlySalesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-          datasets: [{
-            label: 'Monthly Sales (₱)',
-            data: data,
-            backgroundColor: Array(12).fill(barColor),
-            borderColor: Array(12).fill(border),
-            borderWidth: 1,
-            borderRadius: 6,
-            borderSkipped: false,
-            barThickness: 'flex'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { enabled: true }
+        window.monthlySalesChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+            datasets: [{
+              label: 'Monthly Sales (₱)',
+              data: data,
+              backgroundColor: Array(12).fill(barColor),
+              borderColor: Array(12).fill(border),
+              borderWidth: 1,
+              borderRadius: 6,
+              borderSkipped: false,
+              barThickness: 'flex'
+            }]
           },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) { return '₱' + value.toLocaleString(); }
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: true } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { callback: function(value) { return '₱' + value.toLocaleString(); } }
               }
             }
           }
-        }
-      });
-    } catch (err) {
-      console.error('Chart init error', err);
+        });
+      } catch (err) {
+        console.error('Chart init error', err);
+      }
     }
+
+    createChart(series);
   }
 
-  createChart(series);
-}
-
-
-  // run
-  loadStats();
-  loadLowStockProducts();
-
+  // Run
+  loadStatsAndRecent();
 })();
 </script>
 @endpush
