@@ -1,7 +1,7 @@
 <div class="sidebar" data-background-color="dark">
   <div class="sidebar-logo">
     <div class="logo-header" data-background-color="dark">
-      <a href="{{ route('dashboard') }}" class="logo">
+      <a href="{{ route('orders.take') }}" class="logo">
         <span class="logo-text text-white fw-bold fs-4">
           <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Librewhan Cafe" class="me-2" style="width: 30px; height: 30px; border-radius: 5px;">Librewhan Cafe
         </span>

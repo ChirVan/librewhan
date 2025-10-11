@@ -11,6 +11,7 @@ use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardSalesController;
 use App\Http\Controllers\DashboardStatsController;
+use App\Models\StockAlert;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,9 +66,13 @@ Route::middleware(['auth','role:admin'])->get('/sales/receipt/{order}', [SalesRe
 |------------------------------
 */
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/sales', [DashboardSalesController::class, 'index'])->name('dashboard.sales'); // For the Sales Prediction Algorithm
-    Route::get('/dashboard/sales-stats', [DashboardStatsController::class, 'stats'])->name('sales.dashboardStats'); // Dashboard Chart
+
+    // Only admin can access dashboard
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/sales', [DashboardSalesController::class, 'index'])->name('dashboard.sales'); // For the Sales Prediction Algorithm
+        Route::get('/dashboard/sales-stats', [DashboardStatsController::class, 'stats'])->name('sales.dashboardStats'); // Dashboard Chart
+    });
 
     // TODO: Useless so delete if this doesn't cause errors when commented out
     // Route::get('/dashboard/sms', [DashboardController::class, 'smsIndex'])->name('dashboard.sms');
@@ -75,18 +80,22 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/api/dashboard/stats', [DashboardSalesController::class, 'stats'])->name('api.sales.dashboardStats');
 
+    Route::get('/api/stock/alerts', [StockController::class, 'apiAlerts'])->name('api.stock.alerts'); // Inventory Stock alerts notification
+    Route::post('/api/stock/alerts/mark-read', [StockController::class, 'markAllAlertsRead'])->name('api.stock.alerts.markRead');
+
+
     // Order management routes (barista + admin)
     Route::middleware('role:admin|barista')->prefix('orders')->name('orders.')->group(function () {
         Route::post('/', [OrderController::class,'store'])->name('orders.store');
-        Route::get('/pending', [OrderController::class, 'pending'])->name('pending'); // pending() does not exist yet
+        Route::get('/pending', [OrderController::class, 'pending'])->name('pending');
         Route::get('/take', [OrderController::class, 'take'])->name('take');
-        Route::get('/manage', [OrderController::class, 'manage'])->name('manage'); // manage() does not exist yet
-        Route::get('/history', [OrderController::class, 'history'])->name('history'); // history() does not exist yet
+        Route::get('/manage', [OrderController::class, 'manage'])->name('manage');
+        Route::get('/history', [OrderController::class, 'history'])->name('history');
         Route::post('/store', [OrderController::class, 'store'])->name('store');
-        Route::put('/{id}', [OrderController::class, 'update'])->name('update');           // {order}
-        Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');     // {order}
-        Route::patch('/{id}/status', [OrderController::class, 'updateStatus'])->name('updateStatus'); // {order}
-        Route::post('/{id}/complete', [OrderController::class, 'complete'])->name('complete'); // {order}
+        Route::put('/{id}', [OrderController::class, 'update'])->name('update');
+        Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/status', [OrderController::class, 'updateStatus'])->name('updateStatus');
+        Route::post('/{id}/complete', [OrderController::class, 'complete'])->name('complete');
     });
 
 
@@ -172,14 +181,11 @@ Route::middleware(['auth'])->group(function () {
 
         // order API
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show'); // {order} // show() does not exist yet
+        Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
 
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-        // store() already exists above
-        // update() already exists above
-        // dsetroy() already exists above
-        Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus'); // {order}
-        Route::post('/orders/{id}/complete', [OrderController::class, 'complete'])->name('orders.complete'); // {order}
+        Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+        Route::post('/orders/{id}/complete', [OrderController::class, 'complete'])->name('orders.complete');
 
         // Note: product API endpoints are under inventory/api/products above
 

@@ -196,62 +196,13 @@
 
 @push('scripts')
 <script>
-(async function () {
-  const statsRoute = "/api/dashboard/stats"; // explicit API endpoint
+(function () {
+  const statsRoute = "/api/dashboard/stats"; // explicit API path
 
-  function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
-
-  try {
-    const res = await fetch(statsRoute, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-    console.log('Dashboard stats fetch', res.status, res.statusText, res.headers.get('content-type'));
-    if (!res.ok) {
-      const txt = await res.text().catch(()=>res.statusText);
-      console.error('Dashboard stats HTTP error', res.status, txt);
-      return;
-    }
-    const json = await res.json().catch(async e => { const t = await res.text(); throw new Error('Invalid JSON: ' + t); });
-
-    // Logging to help debug shapes
-    console.log('dashboard.stats payload', json);
-
-    const stats = json.stats ?? {};
-    setText('statPending', stats.pending_orders ?? 0);
-    setText('statTodaySales', stats.today_sales ? '₱ ' + Number(stats.today_sales).toLocaleString() : '₱ 0');
-    setText('statLowStocks', stats.low_stock_count ?? 0);
-    setText('statWeeklySales', stats.weekly_sales ? '₱ ' + Number(stats.weekly_sales).toLocaleString() : '₱ 0');
-
-    // Recent orders render
-    const rows = json.recent_orders ?? [];
-    const tbody = document.getElementById('recentOrdersBody');
-    if (tbody) {
-      tbody.innerHTML = (rows || []).map(r => {
-        const items = (r.items || []).map(it => it.name ?? '').join(', ');
-        return `<tr>
-          <td>${r.order_number ?? ('ORD-'+(r.id||''))}</td>
-          <td>${r.customer_name ?? r.customer ?? ''}</td>
-          <td>${items}</td>
-          <td>₱ ${Number(r.total ?? r.amount ?? 0).toLocaleString()}</td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="4" class="text-center text-muted">No recent orders</td></tr>';
-    }
-
-    // call your chart initializer
-    if (typeof initMonthlyChart === 'function') {
-      initMonthlyChart(json.monthly_series ?? null);
-    } else {
-      // fallback: create small inline function if missing
-      console.warn('initMonthlyChart not found — ensure chart init function exists.');
-    }
-
-  } catch (err) {
-    console.error('Failed loading dashboard stats', err);
-  }
-
-  // Chart init reused from your file: ensure createChart can accept series or use fallback
+  /********** Chart helper (defined first, safe to call later) **********/
   function initMonthlyChart(series) {
-    var canvas = document.getElementById('monthlySalesChart');
+    const canvas = document.getElementById('monthlySalesChart');
     if (!canvas) return;
-
     if (window.monthlySalesChart && typeof window.monthlySalesChart.destroy === 'function') {
       window.monthlySalesChart.destroy();
       window.monthlySalesChart = null;
@@ -259,16 +210,16 @@
 
     function createChart(dataSeries) {
       try {
-        var ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
         if (typeof Chart === 'undefined') {
-          var script = document.createElement('script');
+          const script = document.createElement('script');
           script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
           script.onload = function () { createChart(dataSeries); };
           document.head.appendChild(script);
           return;
         }
 
-        const data = dataSeries ?? Array.from({length:12}, () => 0);
+        const data = Array.isArray(dataSeries) ? dataSeries : Array.from({length:12}, () => 0);
         const barColor = 'rgba(23,125,255,0.95)';
         const border = 'rgba(8,63,130,1)';
 
@@ -307,8 +258,64 @@
     createChart(series);
   }
 
-  // Run
-  loadStatsAndRecent();
+  /********** Utility **********/
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  /********** Fetch and render **********/
+  (async function loadStatsAndRender() {
+    try {
+      const res = await fetch(statsRoute, { credentials: 'same-origin', headers: { Accept: 'application/json' }});
+      console.log('Dashboard stats fetch', res.status, res.statusText, res.headers.get('content-type'));
+      if (!res.ok) {
+        const txt = await res.text().catch(()=>res.statusText);
+        console.error('Dashboard stats HTTP error', res.status, txt);
+        return;
+      }
+      const json = await res.json().catch(async e => { const t = await res.text(); throw new Error('Invalid JSON: ' + t); });
+      console.log('dashboard.stats payload', json);
+
+      const stats = json.stats ?? {};
+      setText('statPending', stats.pending_orders ?? 0);
+      setText('statTodaySales', stats.today_sales ? '₱ ' + Number(stats.today_sales).toLocaleString() : '₱ 0');
+      // safe set for low-stock element which may be server-side rendered
+      if (document.getElementById('statLowStocks')) setText('statLowStocks', stats.low_stock_count ?? 0);
+      setText('statWeeklySales', stats.weekly_sales ? '₱ ' + Number(stats.weekly_sales).toLocaleString() : '₱ 0');
+
+      // Recent orders (tbody id = recentOrdersBody)
+      const rows = json.recent_orders ?? [];
+      const tbody = document.getElementById('recentOrdersBody');
+      if (tbody) {
+        tbody.innerHTML = (rows || []).map(r => {
+          const items = (r.items || []).map(it => it.name ?? '').join(', ');
+          return `<tr>
+            <td>${r.order_number ?? ('ORD-'+(r.id||''))}</td>
+            <td>${r.customer_name ?? r.customer ?? ''}</td>
+            <td>${items}</td>
+            <td>₱ ${Number(r.total ?? r.amount ?? 0).toLocaleString()}</td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="4" class="text-center text-muted">No recent orders</td></tr>';
+      }
+
+      // Monthly chart
+      initMonthlyChart(json.monthly_series ?? null);
+
+      // optionally render top/bottom sellers if present
+      if (json.top_sellers && Array.isArray(json.top_sellers)) {
+        // implement UI render here (or console.log for now)
+        console.log('Top sellers:', json.top_sellers);
+      }
+      if (json.bottom_sellers && Array.isArray(json.bottom_sellers)) {
+        console.log('Bottom sellers:', json.bottom_sellers);
+      }
+
+    } catch (err) {
+      console.error('Failed loading dashboard stats', err);
+    }
+  })();
+
 })();
 </script>
 @endpush

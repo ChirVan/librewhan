@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -96,7 +97,7 @@ class OrderController extends Controller
                 $product->save();
 
                 // create order item
-                \App\Models\OrderItem::create([
+                OrderItem::create([
                     'order_id' => $order->id,
                     'name' => $it['name'],
                     'size' => $it['size'] ?? null,
@@ -119,6 +120,14 @@ class OrderController extends Controller
                     'adjustment_type' => 'subtract',
                     'user_id' => $userId,
                 ]);
+
+                // after $product->save() and after StockMovement::create([...]);
+                try {
+                    // call controller helper (quick & dirty)
+                    app(\App\Http\Controllers\StockController::class)->checkAndNotifyProductStock($product);
+                } catch (\Throwable $e) {
+                    Log::warning('Stock check after order failed: '.$e->getMessage());
+                }
             }
 
             return $order;

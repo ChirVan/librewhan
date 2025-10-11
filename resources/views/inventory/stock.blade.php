@@ -582,80 +582,80 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Sample stock data - replace with actual API calls
-    let allStockItems = [
-        {
-            id: 1,
-            name: 'Espresso',
-            sku: 'ESP-001',
-            category: 'Coffee',
-            current_stock: 45,
-            min_level: 20,
-            max_level: 100,
-            last_restocked: '2024-01-10 14:30:00',
-            cost_per_unit: 0.85,
-            status: 'normal'
-        },
-        {
-            id: 2,
-            name: 'Cappuccino',
-            sku: 'CAP-001',
-            category: 'Coffee',
-            current_stock: 32,
-            min_level: 25,
-            max_level: 80,
-            last_restocked: '2024-01-12 09:15:00',
-            cost_per_unit: 1.20,
-            status: 'normal'
-        },
-        {
-            id: 3,
-            name: 'Americano',
-            sku: 'AME-001',
-            category: 'Coffee',
-            current_stock: 8,
-            min_level: 15,
-            max_level: 60,
-            last_restocked: '2024-01-08 16:45:00',
-            cost_per_unit: 0.95,
-            status: 'low'
-        },
-        {
-            id: 4,
-            name: 'Club Sandwich',
-            sku: 'SAN-001',
-            category: 'Food',
-            current_stock: 0,
-            min_level: 10,
-            max_level: 50,
-            last_restocked: '2024-01-05 11:20:00',
-            cost_per_unit: 3.50,
-            status: 'out'
-        },
-        {
-            id: 5,
-            name: 'Croissant',
-            sku: 'CRO-001',
-            category: 'Pastry',
-            current_stock: 3,
-            min_level: 8,
-            max_level: 40,
-            last_restocked: '2024-01-14 08:00:00',
-            cost_per_unit: 1.25,
-            status: 'low'
-        },
-        {
-            id: 6,
-            name: 'Green Tea',
-            sku: 'TEA-001',
-            category: 'Beverage',
-            current_stock: 150,
-            min_level: 30,
-            max_level: 80,
-            last_restocked: '2024-01-13 10:30:00',
-            cost_per_unit: 0.45,
-            status: 'overstocked'
-        }
-    ];
+    // let allStockItems = [
+    //     {
+    //         id: 1,
+    //         name: 'Espresso',
+    //         sku: 'ESP-001',
+    //         category: 'Coffee',
+    //         current_stock: 45,
+    //         min_level: 20,
+    //         max_level: 100,
+    //         last_restocked: '2024-01-10 14:30:00',
+    //         cost_per_unit: 0.85,
+    //         status: 'normal'
+    //     },
+    //     {
+    //         id: 2,
+    //         name: 'Cappuccino',
+    //         sku: 'CAP-001',
+    //         category: 'Coffee',
+    //         current_stock: 32,
+    //         min_level: 25,
+    //         max_level: 80,
+    //         last_restocked: '2024-01-12 09:15:00',
+    //         cost_per_unit: 1.20,
+    //         status: 'normal'
+    //     },
+    //     {
+    //         id: 3,
+    //         name: 'Americano',
+    //         sku: 'AME-001',
+    //         category: 'Coffee',
+    //         current_stock: 8,
+    //         min_level: 15,
+    //         max_level: 60,
+    //         last_restocked: '2024-01-08 16:45:00',
+    //         cost_per_unit: 0.95,
+    //         status: 'low'
+    //     },
+    //     {
+    //         id: 4,
+    //         name: 'Club Sandwich',
+    //         sku: 'SAN-001',
+    //         category: 'Food',
+    //         current_stock: 0,
+    //         min_level: 10,
+    //         max_level: 50,
+    //         last_restocked: '2024-01-05 11:20:00',
+    //         cost_per_unit: 3.50,
+    //         status: 'out'
+    //     },
+    //     {
+    //         id: 5,
+    //         name: 'Croissant',
+    //         sku: 'CRO-001',
+    //         category: 'Pastry',
+    //         current_stock: 3,
+    //         min_level: 8,
+    //         max_level: 40,
+    //         last_restocked: '2024-01-14 08:00:00',
+    //         cost_per_unit: 1.25,
+    //         status: 'low'
+    //     },
+    //     {
+    //         id: 6,
+    //         name: 'Green Tea',
+    //         sku: 'TEA-001',
+    //         category: 'Beverage',
+    //         current_stock: 150,
+    //         min_level: 30,
+    //         max_level: 80,
+    //         last_restocked: '2024-01-13 10:30:00',
+    //         cost_per_unit: 0.45,
+    //         status: 'overstocked'
+    //     }
+    // ];
 
     let filteredItems = [...allStockItems];
     let currentPage = 1;
@@ -1431,5 +1431,18 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 });
+
+document.addEventListener('DOMContentLoaded', function(){
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('search');
+  if (q) {
+    const input = document.getElementById('searchInput');
+    if (input) {
+      input.value = q;
+      input.dispatchEvent(new Event('input')); // trigger filters
+    }
+  }
+});
+
 </script>
 @endsection

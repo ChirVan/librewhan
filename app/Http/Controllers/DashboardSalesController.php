@@ -27,7 +27,7 @@ class DashboardSalesController extends Controller
 
         // quick check: what statuses exist in orders table (log for debugging)
         try {
-            $statuses = \DB::table('orders')
+            $statuses = DB::table('orders')
                 ->select('status', DB::raw('COUNT(*) as cnt'))
                 ->groupBy('status')
                 ->orderByDesc('cnt')
@@ -38,18 +38,20 @@ class DashboardSalesController extends Controller
         }
 
         // Build aggregation query (GROUP BY p.id,p.name is REQUIRED)
-        $agg = \DB::table('order_items as oi')
-            ->join('orders as o', 'o.id', '=', 'oi.order_id')
-            ->join('products as p', 'p.id', '=', 'oi.product_id')
-            ->where('o.status', $status)
-            ->where('o.created_at', '>=', $from->toDateTimeString()) // ensure string binding
-            ->groupBy('p.id', 'p.name')
-            ->select(
-                'p.id as product_id',
-                'p.name',
-                DB::raw('SUM(oi.qty) as total_qty'),
-                DB::raw('SUM(oi.qty * oi.price) as total_revenue')
-            );
+        $agg = DB::table('products as p')
+        ->leftJoin('order_items as oi', 'oi.product_id', '=', 'p.id')
+        ->leftJoin('orders as o', function($join) use ($from) {
+            $join->on('o.id', '=', 'oi.order_id')
+                ->where('o.status', '=', 'completed')
+                ->where('o.created_at', '>=', $from);
+        })
+        ->select(
+            'p.id as product_id',
+            'p.name',
+            DB::raw('COALESCE(SUM(oi.qty),0) as total_qty'),
+            DB::raw('COALESCE(SUM(oi.qty * oi.price),0) as total_revenue')
+        )
+        ->groupBy('p.id', 'p.name');
 
         // run and log results
         $top = (clone $agg)
@@ -58,7 +60,6 @@ class DashboardSalesController extends Controller
             ->get();
 
         $bottom = (clone $agg)
-            ->havingRaw('SUM(oi.qty) > 0')
             ->orderBy($metric === 'revenue' ? 'total_revenue' : 'total_qty', 'asc')
             ->limit($limit)
             ->get();
