@@ -5,7 +5,7 @@
     <div class="logo-header" data-background-color="dark">
       <a href="{{ route('dashboard') }}" class="logo">
         <span class="logo-text text-white fw-bold fs-4">
-          <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Librewhan Cafe" class="me-2" style="width: 25px; height: 25px; border-radius: 5px;">Librewhan
+          <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="{{ config('app.name') }}" class="me-2" style="width: 25px; height: 25px; border-radius: 5px;">{{ config('app.name') }}
         </span>
       </a>
       <div class="nav-toggle">
@@ -26,7 +26,7 @@
   <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
     <div class="container-fluid bg-neutral-300">
       <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex">
-        <span class="fw-bold fs-5 text-dark"><h2>Librewhan <span class="text-warning">Cafe</span></h2>
+        <span class="fw-bold fs-5 text-dark"><h2>{{ config('app.name') }} <span class="text-warning">Cafe</span></h2>
       </nav>
 
       <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">

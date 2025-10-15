@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - Cafe Management')
+@section('title', 'Dashboard -' .config('app.name'))
 
 @section('content')
 <div class="container">

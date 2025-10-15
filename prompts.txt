@@ -1,31 +1,30 @@
-Results
-
-Paste-ready JS replacement — swap this into your header scripts (it replaces the previous JS block). CSS unchanged.
-- done
-
-Tests to run now (quick)
-- it still failed, though the UI rolled back but when the page reloads it doesn't commit the decrement
-
-Here's some of my routes
-
-/* existing codes... */
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/sales', [DashboardSalesController::class, 'index'])->name('dashboard.sales'); // For the Sales Prediction Algorithm
-    Route::get('/dashboard/sales-stats', [DashboardStatsController::class, 'stats'])->name('sales.dashboardStats'); // Dashboard Chart
-
-    // TODO: Useless so delete if this doesn't cause errors when commented out
-    // Route::get('/dashboard/sms', [DashboardController::class, 'smsIndex'])->name('dashboard.sms');
-    // Route::get('/dashboard/inventory', [DashboardController::class, 'inventoryIndex'])->name('dashboard.inventory');
-
-    Route::get('/api/dashboard/stats', [DashboardSalesController::class, 'stats'])->name('api.sales.dashboardStats');
-
-    Route::get('/api/stock/alerts', [StockController::class, 'apiAlerts'])->name('api.stock.alerts'); // Inventory Stock alerts notification
-    Route::post('/api/stock/alerts/mark-read', [StockController::class, 'markAllAlertsRead'])->name('api.stock.alerts.markRead');
-
-/* existing codes... */
-
-
-Optional: make the bell "fly" (fun)
-- didn't work, forget about it
+{
+  "groups": [
+    {
+      "key": "size",
+      "label": "Size",
+      "type": "single",
+      "required": true,
+      "choices": [
+        { "key": "s", "label": "Small", "price": 39 },
+        { "key": "m", "label": "Medium", "price": 49 },
+        { "key": "l", "label": "Large", "price": 59 }
+      ]
+    },
+    {
+      "key": "toppings",
+      "label": "Add-ons",
+      "type": "multiple",
+      "choices": [
+        { "key": "pearls", "label": "Tapioca Pearls", "price": 20 },
+        { "key": "extra_shot", "label": "Extra Shot", "price": 15 }
+      ]
+    },
+    {
+      "key": "note",
+      "label": "Custom note",
+      "type": "text",
+      "placeholder": "Extra hot, no foam..."
+    }
+  ]
+}

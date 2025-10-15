@@ -110,7 +110,7 @@
         <div class="cafe-icon">
             <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Logo" style="width:75px;height:75px;border-radius:6px;">
         </div>
-        <h2>Kalibrewhan</h2>
+        <h2>{{ config('app.name') }}</h2>
         <p>Welcome!</p>
       </div>
 
