@@ -125,13 +125,7 @@
             <span class="profile-username">
               <span class="op-7">Hi,</span>
               <span class="fw-bold">
-                @if(session('user_role') === 'barista')
-                  Barista
-                @elseif(session('user_role') === 'admin')
-                  admin
-                @else
-                  ROLE NOT SET
-                @endif
+                {{ auth()->user()->name }}
               </span>
             </span>
           </a>
@@ -147,7 +141,8 @@
                     />
                   </div>
                   <div class="u-text">
-                    <h4>
+                    <h4>{{ auth()->user()->name }}</h4>
+                    <p class="text-muted">
                       @if(session('user_role') === 'barista')
                         Barista Account
                       @elseif(session('user_role') === 'admin')
@@ -155,8 +150,7 @@
                       @else
                         ROLE NOT SET
                       @endif
-                    </h4>
-                    <p class="text-muted">{{ session('user_email', 'admin@gmail.com') }}</p>
+                    </p>
                     <div class="mb-2">
                       <span class="badge badge-{{ session('workspace_role') === 'sms' ? 'success' : 'primary' }}">
                         @if(session('workspace_role') === 'sms')
@@ -166,11 +160,7 @@
                         @endif
                       </span>
                     </div>
-                    <a
-                      href="{{ route('profile.show') }}"
-                      class="btn btn-xs btn-secondary btn-sm"
-                      >View Profile</a
-                    >
+                    <a href="{{ route('profile.show') }}" class="btn btn-xs btn-secondary btn-sm">View Profile</a>
                   </div>
                 </div>
               </li>
