@@ -214,3 +214,9 @@
     </div>
   </div>
 </div>
+
+<style>
+  .sidebar[data-background-color="dark"], .sidebar-logo .logo-header[data-background-color="dark"] {
+    background-color: #111 !important;
+  }
+</style>

@@ -203,6 +203,42 @@
 
 <!-- Styles left mostly unchanged -->
 <style>
+.btn.btn-primary.add-to-cart, .btn.add-to-cart {
+  background-color: #111 !important;
+  border-color: #111 !important;
+  color: #fff !important;
+}
+
+.btn.btn-outline-primary.category-filter {
+  color: #111 !important;
+  border-color: #111 !important;
+  background-color: #fff !important;
+}
+
+.btn.btn-outline-primary.category-filter.active {
+  background-color: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+.card.product-card .card-title {
+  font-size: 1rem !important;
+  font-weight: 600;
+  word-break: break-word;
+  white-space: normal;
+  margin-bottom: 0.25rem !important;
+}
+.card.product-card .card-body {
+  padding: 0.5rem !important;
+}
+.card.product-card .small.text-muted {
+  font-size: 0.85rem !important;
+}
+.card.product-card {
+  min-width: 120px;
+  max-width: 150px;
+}
+
 /* ... keep your styles as in the original; omitted here for brevity in this message ... */
 </style>
 
@@ -769,6 +805,12 @@
     const amountPaid = parseFloat(document.getElementById('customerPayment')?.value) || total;
     const changeDue = amountPaid - total;
 
+    // Only allow process if amountPaid >= total
+    if (paymentMode === 'cash' && amountPaid < total) {
+      alert('Insufficient payment. Please enter an amount equal to or greater than the total.');
+      return;
+    }
+
     const items = cart.map(item => ({
       product_id: item.product_id,
       name: item.name,
@@ -833,6 +875,32 @@
 
   /* --------- expose a small helper for dev (optional) --------- */
   window._takeOrderDebug = { allProducts, allCategories, cart };
+
+  // --------- calculateChange implementation ---------
+  window.calculateChange = function() {
+    const total = parseFloat(document.getElementById('total')?.textContent.replace(/[^\d.]/g, '')) || 0;
+    const amountPaid = parseFloat(document.getElementById('customerPayment')?.value) || 0;
+    const change = amountPaid - total;
+    const changeAmountEl = document.getElementById('changeAmount');
+    const changeDisplay = document.getElementById('changeDisplay');
+    if (changeAmountEl && changeDisplay) {
+      changeAmountEl.textContent = '₱' + Math.abs(change).toFixed(2);
+      // Remove previous color classes
+      changeAmountEl.classList.remove('text-danger', 'text-success');
+      changeDisplay.classList.remove('border-danger', 'border-success', 'border-secondary');
+      // Style based on value
+      if (change < 0) {
+        changeAmountEl.classList.add('text-danger');
+        changeDisplay.classList.add('border-danger');
+      } else if (change > 0) {
+        changeAmountEl.classList.add('text-success');
+        changeDisplay.classList.add('border-success');
+      } else {
+        // exact
+        changeDisplay.classList.add('border-secondary');
+      }
+    }
+  };
 
 })();
 </script>
