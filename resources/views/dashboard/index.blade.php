@@ -9,88 +9,96 @@
     <div class="row">
       <!-- Pending Order Card -->
       <div class="col-6 col-md-3">
-        <div class="card card-stats card-round bg-dark">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-icon">
-                <div class="icon-big text-center icon-warning bubble-shadow-small">
-                  <i class="fas fa-clock"></i>
+        <a href="{{ route('orders.pending') }}" class="card-link d-block">
+          <div class="card card-stats card-round bg-dark">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-icon">
+                  <div class="icon-big text-center icon-warning bubble-shadow-small">
+                    <i class="fas fa-clock"></i>
+                  </div>
                 </div>
-              </div>
-              <div class="col col-stats ms-3 ms-sm-0">
-                <div class="numbers">
-                  <p class="card-category">Pending Orders</p>
-                  <h4 class="card-title text-white" id="statPending">—</h4>
+                <div class="col col-stats ms-3 ms-sm-0">
+                  <div class="numbers">
+                    <p class="card-category">Pending Orders</p>
+                    <h4 class="card-title text-white" id="statPending">—</h4>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </a>
       </div>
 
       <!-- Today Sales Card -->
       <div class="col-6 col-md-3">
-        <div class="card card-stats card-round bg-dark">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-icon">
-                  <div class="icon-big text-center icon-success bubble-shadow-small">
-                  <i class="fas fa-chart-line"></i>
+        <a href="{{ route('sales.report') }}" class="card-link d-block">
+          <div class="card card-stats card-round bg-dark">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-icon">
+                    <div class="icon-big text-center icon-success bubble-shadow-small">
+                    <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="col col-stats ms-3 ms-sm-0">  
+                  <div class="numbers">
+                    <p class="card-category">Today Sales</p>
+                    <h4 class="card-title text-white" id="statTodaySales">—</h4>
                   </div>
-              </div>
-              <div class="col col-stats ms-3 ms-sm-0">  
-                <div class="numbers">
-                  <p class="card-category">Today Sales</p>
-                  <h4 class="card-title text-white" id="statTodaySales">—</h4>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </a>
       </div>
 
       <!-- Low Stock Card -->
       <div class="col-6 col-md-3">
-        <div class="card card-stats card-round bg-dark">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-icon">
-                  <div class="icon-big text-center icon-danger bubble-shadow-small">
-                    <i class="fas fa-box-open"></i>
+        <a href="{{ route('inventory.stocks.index') }}" class="card-link d-block">
+          <div class="card card-stats card-round bg-dark">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-icon">
+                    <div class="icon-big text-center icon-danger bubble-shadow-small">
+                      <i class="fas fa-box-open"></i>
+                    </div>
+                </div>
+                <div class="col col-stats ms-3 ms-sm-0">
+                  <div class="numbers">
+                    <p class="card-category">Low Stocks</p>
+                    <h4 class="card-title text-white">
+                      {{ isset($lowStockProducts) ? count($lowStockProducts) : '—' }}
+                    </h4>
                   </div>
-              </div>
-              <div class="col col-stats ms-3 ms-sm-0">
-                <div class="numbers">
-                  <p class="card-category">Low Stocks</p>
-                  <h4 class="card-title text-white">
-                    {{ isset($lowStockProducts) ? count($lowStockProducts) : '—' }}
-                  </h4>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </a>
       </div>
 
       <!-- Weekly Revenue Card -->
       <div class="col-6 col-md-3">
-        <div class="card card-stats card-round bg-dark">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-icon">
-                  <div class="icon-big text-center icon-success bubble-shadow-small">
-                    <i class="fas fa-coins"></i>
+        <a href="{{ route('sales.report') }}" class="card-link d-block">
+          <div class="card card-stats card-round bg-dark">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-icon">
+                    <div class="icon-big text-center icon-success bubble-shadow-small">
+                      <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+                <div class="col col-stats ms-3 ms-sm-0">
+                  <div class="numbers">
+                    <p class="card-category">Weekly Sales</p>
+                    <h4 class="card-title text-white" id="statWeeklySales">—</h4>
                   </div>
-              </div>
-              <div class="col col-stats ms-3 ms-sm-0">
-                <div class="numbers">
-                  <p class="card-category">Weekly Sales</p>
-                  <h4 class="card-title text-white" id="statWeeklySales">—</h4>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </a>
       </div>
     </div>
 

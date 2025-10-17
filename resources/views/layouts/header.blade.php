@@ -23,7 +23,7 @@
   </div>
 
   <!-- Navbar Header -->
-  <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+  <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom" style='box-shadow: 1px 10px 15px #575757;'>
     <div class="container-fluid bg-neutral-300">
       <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex">
         <span class="fw-bold fs-5 text-dark"><h2>Librewhan <span class="text-warning">Cafe</span></h2>
@@ -90,7 +90,7 @@
             <li>
               <div class="dropdown-title d-flex justify-content-between align-items-center">
                 Notifications
-                <a href="#" id="markAllAlertsRead" class="small">Mark all read</a>
+                <a href="#" id="markAllAlertsRead" class="small">Mark all as read</a>
               </div>
             </li>
             <li>
@@ -370,16 +370,23 @@
 
   /* meme */
   @keyframes uia {
-    0%, 100% { transform: scaleX(-2); }
-    25% { transform: scaleX(2) scaleY(0.95); }
-    50%, 100% { transform: scaleX(-2); }
-    100% { transform: scaleX(2) scaleY(0.95); }
+    0% { transform: scaleX(-2); }
+    15% { transform: scaleX(2) translateY(-15px); }
+    20% { transform: scaleX(-2); }
+    25% { transform: scaleX(1) translateY(-15px);; }
+
+    45% { transform: scaleX(1); }
+    50% { transform: scaleX(-2); }
+    65% { transform: scaleX(2) translateY(-15px); }
+    70% { transform: scaleX(-2); }
+    85% { transform: scaleX(1) translateY(-15px);; }
+    90% { transform: scaleX(1); }
   }
 
   /* Call your chosen animation here */
   #notifDropdown.has-alerts .fa-bell {
     color: #ff9100 !important;
-    animation: ring 2s infinite ease-in-out !important;
+    animation: uia 2s infinite ease-in-out !important;
     transform-origin: top center;
   }
 
@@ -388,11 +395,10 @@
     min-width: 420px !important;
     max-width: 720px !important;
     width: auto !important;
-    border: 1px solid rgba(0,0,0,0.10) !important;
     border-radius: 10px !important;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.12) !important;
+    box-shadow: 1px 5px 15px #373737 !important;
     padding: 0 !important;
-    background: #19162c !important;
+    background: #1e1d25 !important;
     overflow: hidden;
     z-index: 3050 !important;
   }
@@ -496,7 +502,7 @@
   async function renderDropdown(alerts) {
     const box = ensureDropdownContainer();
     if (!box) return;
-    const headerHtml = `<li><div class="dropdown-title">Stock Alerts (${alerts.length})</div></li>`;
+    const headerHtml = `<li><div class="dropdown-title text-white">Stock Alerts ( <span class='text-warning fs-4'>${alerts.length}</span> )</div></li>`;
     let listHtml = '';
     if (alerts.length > 0) {
       listHtml += '<li><div class="notif-scroll">';
@@ -527,7 +533,7 @@
     } else {
       listHtml = `<li><div class="p-3 text-center text-muted">No alerts</div></li>`;
     }
-    const footerHtml = `<li class="dropdown-footer"><button id="markAllReadBtn" class="btn btn-sm btn-link">Mark all read</button></li>`;
+    const footerHtml = `<li class="dropdown-footer"><button id="markAllReadBtn" class="btn btn-sm btn-link text-warning text-decoration-none">Mark all as read</button></li>`;
     box.innerHTML = headerHtml + listHtml + footerHtml;
   }
 
@@ -615,7 +621,7 @@
         const box = ensureDropdownContainer();
         if (box) box.innerHTML = `<li><div class="dropdown-title">Stock Alerts (0)</div></li><li><div class="p-3 text-center text-muted">No alerts</div></li>`;
       } else {
-        showToast('Mark all read failed (server).', 'warning');
+        showToast('Mark all as read failed (server).', 'warning');
       }
     } catch (err) {
       showToast('Network error marking all read', 'danger');

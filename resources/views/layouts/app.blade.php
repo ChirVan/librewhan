@@ -37,6 +37,9 @@
     
     <!-- Custom Branding Styles -->
     <style>
+      /* General Background Color of the website */
+      body { background-color: #cedbdf !important;}
+
       .logo .logo-text {
         font-size: 1.25rem !important;
         letter-spacing: 0.5px;
@@ -70,12 +73,7 @@
         border-radius: 6px;
       }
 
-      .footer {
-        position: relative !important;
-        margin-top: auto;
-      }
-      
-
+      .footer { background-color: #111; position: relative !important; margin-top: auto; }
     </style>
 
     @stack('css')

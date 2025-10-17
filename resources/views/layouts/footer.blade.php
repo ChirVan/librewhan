@@ -15,7 +15,7 @@
         </li>
       </ul>
     </nav>
-    <div class="copyright">
+    <div class="copyright text-white">
       {{ date('Y') }}, made with <i class="fa fa-heart heart text-danger"></i> by
       <a href="">NexSense Company</a>
     </div>

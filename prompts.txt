@@ -1,4 +1,5 @@
-Results
+NEW STEP
 
-Paste this to replace your openCustomizationModal wrapper
-- 
+Added the simple routing of dashboard cards on the top but I am still thinking about the security of Recent Orders, Low Stocks Products and others..
+
+But I am thinking about the top 4 cards visibility too, but not as high as requiring a password, but at least just a button to click just so the data doesn't sit there exposing itself in the admin's screen without protection

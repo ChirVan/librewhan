@@ -11,7 +11,7 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: linear-gradient(135deg,#1f2a37 0%,#283443 100%);
+    background: linear-gradient(135deg,#12181f 0%,#141a20 100%);
     font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   }
 
@@ -30,7 +30,7 @@
     flex: 1;
     min-width: 320px;
     padding: 48px 36px;
-    background: linear-gradient(180deg,#16202a 0%,#1e2b38 100%);
+    background: linear-gradient(180deg,#22272c 0%,#1e2125 100%);
     color: #dbe7ee;
     display: flex;
     flex-direction: column;
@@ -78,7 +78,7 @@
   .form-label { font-weight:600; color:#3b4950; }
   .btn-submit {
     border-radius: 999px;
-    background: linear-gradient(90deg,#122032,#0f2430);
+    background: linear-gradient(90deg,#141232,#110f30);
     color: #fff;
     padding: 10px 16px;
     border: none;

@@ -11,7 +11,7 @@
             <h3 class="fw-bold mb-3">Order Management</h3>
             <ul class="breadcrumbs mb-3">
                 <li class="nav-item">
-                    <a href="#">Take New Order</a>
+                    <p>Take New Order</p>
                 </li>
             </ul>
         </div>
@@ -237,6 +237,9 @@
 .card.product-card {
   min-width: 120px;
   max-width: 150px;
+  border-left: 1px solid #000131;
+  border-right: 2px solid #000131;
+  border-bottom: 3px solid #000131;
 }
 
 /* ... keep your styles as in the original; omitted here for brevity in this message ... */
@@ -437,7 +440,7 @@
 
     filtered.forEach(product => {
       const col = document.createElement('div');
-      col.className = 'col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-2 product-item';
+      col.className = 'col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 product-item';
 
       const priceText = product.size_choices && product.size_choices.length
         ? `From ₱${currency(product.display_price)}`
@@ -462,11 +465,10 @@
         </div>
         <div class="card-body text-center p-2">
           <h6 class="card-title mb-1">${escapeHtml(product.name)}</h6>
-          <div class="small text-muted">${escapeHtml(priceText)}</div>
         </div>
         <div class="card-footer p-2">
-          <button class="btn btn-primary btn-sm w-100 add-to-cart" data-product-id="${product.id}">
-            <i class="fas fa-plus"></i> Add
+          <button class="btn add-to-cart p-0" data-product-id="${product.id}">
+            <div style="background-color:blue;">${escapeHtml(priceText)}</div>
           </button>
         </div>
       `;
