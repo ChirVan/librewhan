@@ -376,7 +376,7 @@
   /* Call your chosen animation here */
   #notifDropdown.has-alerts .fa-bell {
     color: #ff9100 !important;
-    animation: uia 2s infinite ease-in-out !important;
+    animation: ring 2s infinite ease-in-out !important;
     transform-origin: top center;
   }
 

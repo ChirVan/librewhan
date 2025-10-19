@@ -1,4 +1,8 @@
 
+ISSUE
+
+In cart, change shows negative output, leading to confusing total payment change
+
 INFORMATION
 
 Trigger low stocks notifications:

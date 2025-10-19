@@ -254,6 +254,7 @@
   function clearChildren(el){ if(!el) return; while(el.firstChild) el.removeChild(el.firstChild); }
 
   // DOM refs
+  const AUTO_FILL_CASH_PAYMENT = false;
   const productsApiUrl = "{{ url('/inventory/api/products') }}";
   const categoriesApiUrl = "{{ url('/inventory/api/products/_meta/categories') }}";
   const $categoryFilters = document.getElementById('category-filters');
@@ -710,7 +711,7 @@
     renderCart();
   });
 
-  /* --------- cart rendering (unchanged) --------- */
+  /* --------- cart rendering --------- */
   function renderCart() {
     const paymentSection = document.getElementById('payment-section');
     const changeDisplay = document.getElementById('changeDisplay');
@@ -724,6 +725,8 @@
       if (paymentSection) paymentSection.style.display = 'none';
       if (changeDisplay) changeDisplay.style.display = 'none';
       if (orderSummary) orderSummary.style.display = 'none';
+      // update button visibility (no cart => hide)
+      updateProcessOrderVisibility();
       return;
     }
 
@@ -735,9 +738,10 @@
     if (changeDisplay) {
       if (paymentMode === 'cash') {
         changeDisplay.style.display = '';
-        window.calculateChange();
+        window.calculateChange(); // ensure change computed
       } else {
         changeDisplay.style.display = 'none';
+        // Reset change field
         const changeAmountEl = document.getElementById('changeAmount');
         if (changeAmountEl) changeAmountEl.textContent = '₱0.00';
       }
@@ -771,6 +775,22 @@
     $subtotalEl.textContent = `₱${currency(subtotal)}`;
     $totalEl.textContent = `₱${currency(total)}`;
 
+    // Optionally auto-fill the cash payment input with the total when cart appears
+    if (paymentMode === 'cash' && AUTO_FILL_CASH_PAYMENT && total > 0) {
+      const paymentInput = document.getElementById('customerPayment');
+      if (paymentInput) {
+        // only fill if empty or less than total (avoid overwriting user input)
+        const current = parseFloat(paymentInput.value) || 0;
+        if (!paymentInput.value || current < total) {
+          paymentInput.value = total.toFixed(2);
+        }
+      }
+    }
+
+    // After totals and potential auto-fill, compute change and set process-button visibility
+    // (calculateChange will call updateProcessOrderVisibility internally)
+    window.calculateChange();
+
     // attach cart buttons
     $cartItemsContainer.querySelectorAll('.remove-cart-item').forEach(btn => {
       btn.addEventListener('click', function () {
@@ -797,22 +817,47 @@
 
   /* --------- process order (unchanged) --------- */
   $processOrderBtn.addEventListener('click', async function () {
-    if (!cart.length) { alert('Cart is empty!'); return; }
+    if (!cart.length) { 
+      alert('Cart is empty!'); 
+      return; 
+    }
+    
     const customerName = document.getElementById('customerName')?.value || null;
     let orderType = document.getElementById('orderType')?.value;
     if (orderType !== 'dine-in' && orderType !== 'takeaway') orderType = 'dine-in';
     const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
     const subtotal = parseFloat($subtotalEl.textContent.replace(/[^\d.]/g, '')) || 0;
     const total = parseFloat($totalEl.textContent.replace(/[^\d.]/g, '')) || 0;
-    const amountPaid = parseFloat(document.getElementById('customerPayment')?.value) || total;
+    
+    // Enhanced payment validation for cash
+    if (paymentMode === 'cash') {
+      const amountPaidInput = document.getElementById('customerPayment');
+      const amountPaid = parseFloat(amountPaidInput?.value) || 0;
+      
+      // Check if payment amount is entered
+      if (!amountPaidInput?.value || amountPaid === 0) {
+        alert('Please enter the payment amount received from customer.');
+        amountPaidInput?.focus();
+        return;
+      }
+      
+      // Check if payment is sufficient
+      if (amountPaid < total) {
+        const shortage = total - amountPaid;
+        alert(`Insufficient payment!\n\nTotal: ₱${total.toFixed(2)}\nPaid: ₱${amountPaid.toFixed(2)}\nShort by: ₱${shortage.toFixed(2)}\n\nPlease collect at least ₱${total.toFixed(2)} from the customer.`);
+        amountPaidInput?.focus();
+        amountPaidInput?.select(); // Highlight the input for easy correction
+        return;
+      }
+    }
+    
+    // For non-cash payments, amount paid equals total
+    const amountPaid = paymentMode === 'cash' 
+      ? parseFloat(document.getElementById('customerPayment')?.value) || 0
+      : total;
     const changeDue = amountPaid - total;
 
-    // Only allow process if amountPaid >= total
-    if (paymentMode === 'cash' && amountPaid < total) {
-      alert('Insufficient payment. Please enter an amount equal to or greater than the total.');
-      return;
-    }
-
+    // Rest of your code continues...
     const items = cart.map(item => ({
       product_id: item.product_id,
       name: item.name,
@@ -822,7 +867,7 @@
       ice: item.ice ?? null,
       milk: item.milk ?? null,
       instructions: item.instructions ?? null,
-      price: item.price,  // per-unit
+      price: item.price,
       qty: item.qty
     }));
 
@@ -861,7 +906,7 @@
       alert('Order failed (network). See console.');
     }
   });
-
+  
   /* --------- init --------- */
   async function init() {
     await fetchCategories();
@@ -878,31 +923,118 @@
   /* --------- expose a small helper for dev (optional) --------- */
   window._takeOrderDebug = { allProducts, allCategories, cart };
 
-  // --------- calculateChange implementation ---------
-  window.calculateChange = function() {
-    const total = parseFloat(document.getElementById('total')?.textContent.replace(/[^\d.]/g, '')) || 0;
-    const amountPaid = parseFloat(document.getElementById('customerPayment')?.value) || 0;
-    const change = amountPaid - total;
-    const changeAmountEl = document.getElementById('changeAmount');
-    const changeDisplay = document.getElementById('changeDisplay');
-    if (changeAmountEl && changeDisplay) {
-      changeAmountEl.textContent = '₱' + Math.abs(change).toFixed(2);
-      // Remove previous color classes
-      changeAmountEl.classList.remove('text-danger', 'text-success');
-      changeDisplay.classList.remove('border-danger', 'border-success', 'border-secondary');
-      // Style based on value
-      if (change < 0) {
-        changeAmountEl.classList.add('text-danger');
-        changeDisplay.classList.add('border-danger');
-      } else if (change > 0) {
-        changeAmountEl.classList.add('text-success');
-        changeDisplay.classList.add('border-success');
-      } else {
-        // exact
-        changeDisplay.classList.add('border-secondary');
-      }
+  // ---------- Payment helpers & process-button visibility ----------
+window.toggleCashPayment = function() {
+  const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
+  const cashSection = document.getElementById('cashPaymentSection');
+  const changeDisplay = document.getElementById('changeDisplay');
+  if (!cashSection) return;
+  if (paymentMode === 'cash') {
+    cashSection.style.display = '';
+    // show change area if cart has items
+    if ((document.getElementById('total')?.textContent || '₱0.00') !== '₱0.00') {
+      changeDisplay && (changeDisplay.style.display = '');
     }
+  } else {
+    cashSection.style.display = 'none';
+    changeDisplay && (changeDisplay.style.display = 'none');
+    // clear payment input when switching away from cash (optional)
+    const paymentInput = document.getElementById('customerPayment');
+    if (paymentInput) paymentInput.value = '';
+  }
+  // update button visibility after mode change
+  updateProcessOrderVisibility();
+};
+
+// Replace existing calculateChange with this improved version
+window.calculateChange = function() {
+  const total = parseFloat(document.getElementById('total')?.textContent.replace(/[^\d.]/g, '')) || 0;
+  const amountPaidInput = document.getElementById('customerPayment');
+  const amountPaid = parseFloat(amountPaidInput?.value) || 0;
+  const change = amountPaid - total;
+
+  const changeAmountEl = document.getElementById('changeAmount');
+  const changeDisplay = document.getElementById('changeDisplay');
+  if (changeAmountEl && changeDisplay) {
+    // show negative with minus sign, positive as usual, zero as 0.00
+    if (change < 0) {
+      // changeAmountEl.textContent = `-₱${Math.abs(change).toFixed(2)}`;
+      changeAmountEl.textContent = '⚠️ ₱' + Math.abs(change).toFixed(2) + ' short ⚠️';
+      changeAmountEl.classList.remove('text-success');
+      changeAmountEl.classList.add('text-danger');
+      changeDisplay.classList.remove('border-success');
+      changeDisplay.classList.add('border-danger');
+    } else if (change > 0) {
+      changeAmountEl.textContent = `₱${change.toFixed(2)}`;
+      changeAmountEl.classList.remove('text-danger');
+      changeAmountEl.classList.add('text-success');
+      changeDisplay.classList.remove('border-danger');
+      changeDisplay.classList.add('border-success');
+    } else {
+      changeAmountEl.textContent = `₱${(0).toFixed(2)}`;
+      changeAmountEl.classList.remove('text-danger', 'text-success');
+      changeDisplay.classList.remove('border-danger','border-success');
+      changeDisplay.classList.add('border-secondary');
+    }
+    // ensure change area visible only for cash when cart not empty
+    if (document.getElementById('paymentMode')?.value === 'cash' && total > 0) {
+      changeDisplay.style.display = '';
+    } else {
+      changeDisplay.style.display = 'none';
+    }
+  }
+
+  // finally update process button visibility
+  updateProcessOrderVisibility();
   };
+
+  // show/hide the Process Order button based on payment sufficiency
+  function updateProcessOrderVisibility() {
+    const processBtn = document.getElementById('process-order');
+    if (!processBtn) return;
+
+    const total = parseFloat(document.getElementById('total')?.textContent.replace(/[^\d.]/g, '')) || 0;
+    const paymentMode = document.getElementById('paymentMode')?.value || 'cash';
+
+    if (paymentMode === 'cash') {
+      const amountPaid = parseFloat(document.getElementById('customerPayment')?.value) || 0;
+      // Hide when insufficient, show when sufficient
+      if (amountPaid < total) {
+        processBtn.style.display = 'none';
+      } else {
+        processBtn.style.display = ''; // show
+      }
+    } else {
+      // non-cash payments: always show the button (they pay later / gateway)
+      processBtn.style.display = '';
+    }
+  }
+
+  // wire listeners so changes instantly affect the button
+  (function wirePaymentListeners() {
+    const paymentInput = document.getElementById('customerPayment');
+    const paymentModeSel = document.getElementById('paymentMode');
+
+    if (paymentInput) {
+      paymentInput.addEventListener('input', function() {
+        // recalc change and update process btn visibility
+        window.calculateChange();
+      });
+    }
+
+    if (paymentModeSel) {
+      paymentModeSel.addEventListener('change', function() {
+        window.toggleCashPayment();
+      });
+    }
+
+    // ensure initial visibility correct on page load / cart render
+    document.addEventListener('DOMContentLoaded', function() {
+      window.toggleCashPayment();
+      window.calculateChange();
+    });
+  })();
+
 
 })();
 </script>
