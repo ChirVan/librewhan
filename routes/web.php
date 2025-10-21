@@ -237,8 +237,6 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.resetPassword');
         Route::patch('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggleStatus');
-
-
     });
 
 

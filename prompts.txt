@@ -1,3 +1,22 @@
+FIXING 101
+
 Results
 
-Apparently when I input a number in the change it will only trigger the button to be unclickable, so when the cart is rendered there's no number in the input, the button is clickable. Is there a way to instead declare or automatically put a number inside the input or change the condition that triggers this so it's unclickable already right when the cart is rendered
+1) Blade edits — add ids to the metric cards
+- done, didn't add the tiny placeholder for revenueGrowth
+
+2) JS fixes — paste into the @push('scripts') in report.blade.php
+- done
+
+3) Ensure the trend buttons actually toggle the chart and initialize chart with monthly
+- done
+
+Amazing! worked like a charm!
+
+Now let's proceed to User Management.
+
+ISSUE
+When in mobile, the buttons aren't clickable since mobile screens are compressed. Improve the UI on mobile
+
+USER LOGS
+Is there a way for me too log and see their time of logging in and out of the website? That would be helpful if I can see their last log in/out in this page instead of user id, which should be inside edit user instead(I think).

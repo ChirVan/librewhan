@@ -16,7 +16,7 @@
             </ul>
         </div>
 
-        <div class="row">
+        <div class="row ">
             <!-- Products Section -->
             <div class="col-md-8">
                 <div class="card">
@@ -242,7 +242,20 @@
   border-bottom: 3px solid #000131;
 }
 
-/* ... keep your styles as in the original; omitted here for brevity in this message ... */
+@media (max-width: 767.98px) {
+    .row {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .col-md-4 {
+        order: -1; /* Move cart to top on mobile */
+    }
+    
+    .col-md-8 {
+        order: 1; /* Move products below cart */
+    }
+}
 </style>
 
 <!-- SMS JavaScript - dynamic renderer version -->

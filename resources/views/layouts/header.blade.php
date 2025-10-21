@@ -166,23 +166,30 @@
               </li>
               <li>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="{{ route('profile.show') }}">My Profile</a>
+                <a class="dropdown-item" href="{{ route('profile.show') }}">Profile & Settings</a>
+
                 @if((auth()->check() && auth()->user()->usertype === 'admin'))
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-header">Switch Workspace</div>
-                @if(session('workspace_role') !== 'sms')
-                <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=sms">
-                  <i class="fas fa-cash-register me-2"></i>Sales Management System
-                </a>
+                  <div class="dropdown-divider"></div>
+                  <div class="dropdown-header">Switch Workspace</div>
+                  
+                  <div class="dropdown-divider"></div>
+                  @if(session('workspace_role') !== 'sms')
+                    <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=sms">
+                      <i class="fas fa-chart-line me-2"></i>Sales Management System
+                    </a>
+                  @endif
+                  @if(session('workspace_role') !== 'inventory')
+                    <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=inventory">
+                      <i class="fas fa-boxes me-2"></i>Inventory Management
+                    </a>
+                  @endif
+
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ url('admin/users') }}">
+                    <i class="fas fa-users-cog me-2"></i>User Management System
+                  </a>
                 @endif
-                @if(session('workspace_role') !== 'inventory')
-                <a class="dropdown-item" href="{{ route('dashboard') }}?workspace=inventory">
-                  <i class="fas fa-boxes me-2"></i>Inventory Management
-                </a>
-                @endif
-                @endif
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">Account Setting</a>
+
                 <div class="dropdown-divider"></div>
                 <form method="POST" action="{{ route('logout') }}" style="display:inline;">
                   @csrf

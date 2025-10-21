@@ -115,7 +115,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Total Revenue</p>
-                                    <h4 class="card-title text-success">₱{{ number_format($totalRevenue, 2) }}</h4>
+                                    <h4 id="totalRevenue" class="card-title text-success">₱{{ number_format($totalRevenue, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -134,7 +134,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Total Orders</p>
-                                    <h4 class="card-title text-primary">{{ $totalOrders }}</h4>
+                                    <h4 id="totalOrders" class="card-title text-primary">{{ $totalOrders }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -153,7 +153,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Average Order</p>
-                                    <h4 class="card-title text-warning">₱{{ number_format($avgOrder, 2) }}</h4>
+                                    <h4 id="averageOrder" class="card-title text-warning">₱{{ number_format($avgOrder, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -172,7 +172,7 @@
                             <div class="col col-stats ms-3 ms-sm-0">
                                 <div class="numbers">
                                     <p class="card-category">Customers</p>
-                                    <h4 class="card-title text-info">{{ $uniqueCustomers }}</h4>
+                                    <h4 id="totalCustomers" class="card-title text-info">{{ $uniqueCustomers }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -388,7 +388,6 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // route endpoints (blade helpers)
@@ -415,6 +414,11 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeCharts(); // create empty charts
         await loadAllData();
         setupEventListeners();
+
+        // after charts are created and data loaded, default to monthly trend
+        setTimeout(() => {
+            try { updateTrendChart('monthly'); } catch (e) { console.warn('updateTrendChart failed', e); }
+        }, 300);
     }
 
     function setupEventListeners() {
@@ -434,59 +438,140 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadAllData() {
         try {
-            const [summaryRes, trendRes, categoriesRes, topRes, paymentRes, hourlyRes, salesRes] = await Promise.allSettled([
-                fetch(routes.summary).then(r => r.json()),
-                fetch(routes.trend + '?period=monthly').then(r => r.json()),
-                fetch(routes.categories).then(r => r.json()),
-                fetch(routes.topProducts + '?limit=10').then(r => r.json()),
-                fetch(routes.paymentMethods).then(r => r.json()),
-                fetch(routes.hourly).then(r => r.json()),
-                fetch(routes.salesData + `?page=${currentPage}&per_page=${recordsPerPage}`).then(r => r.json())
+            // build date query params from inputs if present
+            const from = document.getElementById('fromDate')?.value || null;
+            const to = document.getElementById('toDate')?.value || null;
+            const q = new URLSearchParams();
+            if (from) q.set('from', from);
+            if (to) q.set('to', to);
+
+            // fetch in parallel using safeFetchJson
+            const [
+                summaryJson,
+                trendJson,
+                categoriesJson,
+                topJson,
+                paymentJson,
+                hourlyJson,
+                salesDataJson
+            ] = await Promise.all([
+                safeFetchJson(routes.summary + (q.toString() ? ('?' + q.toString()) : '')),
+                safeFetchJson(routes.trend + '?period=monthly' + (q.toString() ? '&' + q.toString() : '')),
+                safeFetchJson(routes.categories + (q.toString() ? ('?' + q.toString()) : '')),
+                safeFetchJson(routes.topProducts + '?limit=10' + (q.toString() ? '&' + q.toString() : '')),
+                safeFetchJson(routes.paymentMethods + (q.toString() ? ('?' + q.toString()) : '')),
+                safeFetchJson(routes.hourly + (q.toString() ? ('?' + q.toString()) : '')),
+                safeFetchJson(routes.salesData + `?page=${currentPage}&per_page=${recordsPerPage}` + (q.toString() ? '&' + q.toString() : ''))
             ]);
 
-            if (summaryRes.status === 'fulfilled' && summaryRes.value.success) {
-                setSummary(summaryRes.value.summary ?? summaryRes.value);
-            } else if (summaryRes.status === 'fulfilled') {
-                setSummary(summaryRes.value);
+            if (summaryJson) {
+                // some APIs wrap summary in { success:true, summary: {...} }
+                const payload = summaryJson.summary ?? summaryJson;
+                setSummary(payload);
+            } else {
+                console.warn('Summary API returned null or 404. Check route:', routes.summary);
             }
 
-            if (trendRes.status === 'fulfilled') {
-                updateTrendChartDataFromApi(trendRes.value.trend ?? trendRes.value);
+            if (trendJson) {
+                updateTrendChartDataFromApi(trendJson.trend ?? trendJson);
             }
 
-            if (categoriesRes.status === 'fulfilled') {
-                setCategoryChart(categoriesRes.value.categories ?? (categoriesRes.value.data ?? []));
+            if (categoriesJson) {
+                setCategoryChart(categoriesJson.categories ?? (categoriesJson.data ?? categoriesJson));
             }
 
-            if (topRes.status === 'fulfilled') {
-                setTopProducts(topRes.value.products ?? topRes.value.data ?? []);
+            if (topJson) {
+                setTopProducts(topJson.products ?? topJson.data ?? topJson);
             }
 
-            if (paymentRes.status === 'fulfilled') {
-                setPaymentMethods(paymentRes.value.payment_methods ?? paymentRes.value);
+            if (paymentJson) {
+                setPaymentMethods(paymentJson.payment_methods ?? paymentJson);
             }
 
-            if (hourlyRes.status === 'fulfilled') {
-                setHourlyChart(hourlyRes.value.hourly_pattern ?? hourlyRes.value);
+            if (hourlyJson) {
+                setHourlyChart(hourlyJson.hourly_pattern ?? hourlyJson);
             }
 
-            if (salesRes.status === 'fulfilled') {
-                setSalesTable(salesRes.value.data ?? salesRes.value);
+            if (salesDataJson) {
+                setSalesTable(salesDataJson.data ?? salesDataJson);
             }
         } catch (err) {
             console.error('Error loading report data', err);
         }
     }
 
+    // ---------- setSummary ----------
     function setSummary(summary) {
-        // Accept both nested and root formats
         const s = summary || {};
-        document.getElementById('totalRevenue').textContent = s.total_revenue ? `₱${Number(s.total_revenue).toLocaleString()}` : (s.totalRevenue ? `₱${Number(s.totalRevenue).toLocaleString()}` : '₱0.00');
-        document.getElementById('totalOrders').textContent = s.total_orders ?? s.totalOrders ?? '0';
-        document.getElementById('averageOrder').textContent = s.average_order ? `₱${Number(s.average_order).toFixed(2)}` : (s.averageOrder ? `₱${Number(s.averageOrder).toFixed(2)}` : '₱0.00');
-        document.getElementById('totalCustomers').textContent = s.total_customers ?? s.totalCustomers ?? '0';
-        // growth fields if present
-        document.getElementById('revenueGrowth').innerHTML = s.growth?.revenue ? `<i class="fas fa-arrow-up"></i> +${s.growth.revenue}%` : (s.growth?.revenue ? `<i class="fas fa-arrow-up"></i> +${s.growth.revenue}%` : '—');
+        // helper to set text if element exists
+        function safeSet(id, text) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = text;
+        }
+
+        // Accept multiple shapes
+        const totalRevenue = s.total_revenue ?? s.totalRevenue ?? s.summary?.total_revenue ?? 0;
+        const totalOrders = s.total_orders ?? s.totalOrders ?? s.summary?.total_orders ?? 0;
+        const averageOrder = s.average_order ?? s.averageOrder ?? s.summary?.average_order ?? 0;
+        const customers = s.total_customers ?? s.totalCustomers ?? s.summary?.total_customers ?? 0;
+        const growth = s.growth?.revenue ?? s.summary?.growth?.revenue ?? null;
+
+        safeSet('totalRevenue', totalRevenue ? `₱${Number(totalRevenue).toLocaleString()}` : '₱0.00');
+        safeSet('totalOrders', totalOrders ?? '0');
+        safeSet('averageOrder', averageOrder ? `₱${Number(averageOrder).toFixed(2)}` : '₱0.00');
+        safeSet('totalCustomers', customers ?? '0');
+        if (document.getElementById('revenueGrowth')) {
+            document.getElementById('revenueGrowth').innerHTML = growth ? `<i class="fas fa-arrow-up"></i> +${growth}%` : '—';
+        }
+    }
+
+    // set date inputs based on report type
+    function updateDateRange() {
+        const type = document.getElementById('reportType')?.value ?? 'monthly';
+        const fromEl = document.getElementById('fromDate');
+        const toEl = document.getElementById('toDate');
+        const today = new Date();
+        const fmt = d => d.toISOString().slice(0,10);
+
+        if (!fromEl || !toEl) return;
+        if (type === 'daily') {
+            fromEl.value = fmt(today);
+            toEl.value = fmt(today);
+        } else if (type === 'weekly') {
+            // last 7 days
+            const start = new Date();
+            start.setDate(today.getDate() - 6);
+            fromEl.value = fmt(start);
+            toEl.value = fmt(today);
+        } else if (type === 'monthly') {
+            const start = new Date(today.getFullYear(), today.getMonth(), 1);
+            fromEl.value = fmt(start);
+            toEl.value = fmt(today);
+        } else if (type === 'yearly') {
+            const start = new Date(today.getFullYear(), 0, 1);
+            fromEl.value = fmt(start);
+            toEl.value = fmt(today);
+        } else {
+            // custom - keep whatever user set
+        }
+    }
+
+    // improved loader with graceful handling
+    async function safeFetchJson(url) {
+        try {
+            const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }});
+            if (!res.ok) {
+                console.warn('API fetch not OK', url, res.status);
+                return null;
+            }
+            // try parse json
+            const json = await res.json().catch(e => { console.warn('Invalid JSON from', url); return null; });
+            return json;
+        } catch (err) {
+            console.error('Fetch error', url, err);
+            return null;
+        }
     }
 
     function updateTrendChartDataFromApi(trend) {
@@ -610,57 +695,152 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('showingTo').textContent = showingTo;
     }
 
-    // ---------- Chart initialization ----------
+    
+    // ---------- Chart initialization (replace existing initializeCharts() and updateTrendChart()) ----------
     function initializeCharts() {
-        // Sales Trend
-        const salesTrendCtx = document.getElementById('salesTrendChart').getContext('2d');
-        charts.salesTrend = new Chart(salesTrendCtx, {
-            type: 'line',
-            data: { labels: [], datasets: [{ label: 'Sales', data: [], borderWidth: 3, fill: true }] },
-            options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
-        });
+        // Helper to ensure Chart.js is loaded then create charts
+        function ensureChartAndCreate(fn) {
+            if (typeof Chart !== 'undefined') {
+                try { fn(); } catch (e) { console.error('Chart create error', e); }
+                return;
+            }
+            // load Chart.js (specific version used on Dashboard)
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+            s.onload = function () {
+                try { fn(); } catch (e) { console.error('Chart create error', e); }
+            };
+            s.onerror = function (e) { console.error('Failed to load Chart.js', e); };
+            document.head.appendChild(s);
+        }
 
-        // Category
-        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-        charts.category = new Chart(categoryCtx, {
-            type: 'doughnut',
-            data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
-            options: { responsive:true, maintainAspectRatio:false }
-        });
+        // create salesTrend (line) chart
+        ensureChartAndCreate(function () {
+            const salesTrendCanvas = document.getElementById('salesTrendChart');
+            if (!salesTrendCanvas) return;
+            const ctx = salesTrendCanvas.getContext('2d');
+            if (charts.salesTrend && typeof charts.salesTrend.destroy === 'function') {
+                charts.salesTrend.destroy();
+                charts.salesTrend = null;
+            }
+            charts.salesTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [], // will be filled by API
+                    datasets: [{
+                        label: 'Sales',
+                        data: [],
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        backgroundColor: function(context) {
+                            // subtle gradient if supported
+                            try {
+                                const c = context.chart.ctx;
+                                const g = c.createLinearGradient(0, 0, 0, 200);
+                                g.addColorStop(0, 'rgba(23,125,255,0.18)');
+                                g.addColorStop(1, 'rgba(23,125,255,0.02)');
+                                return g;
+                            } catch (e) { return 'rgba(23,125,255,0.2)'; }
+                        },
+                        borderColor: 'rgba(23,125,255,0.95)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => '₱' + Number(v).toLocaleString() } } }
+                }
+            });
 
-        // Payment
-        const paymentCtx = document.getElementById('paymentMethodChart').getContext('2d');
-        charts.payment = new Chart(paymentCtx, {
-            type: 'pie',
-            data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
-            options: { responsive:true, maintainAspectRatio:false }
-        });
+            // create other charts that rely on Chart.js (if elements exist)
+            // Category (doughnut)
+            const catEl = document.getElementById('categoryChart');
+            if (catEl) {
+                const ctx2 = catEl.getContext('2d');
+                if (charts.category && typeof charts.category.destroy === 'function') charts.category.destroy();
+                charts.category = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+                    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} }
+                });
+            }
 
-        // Hourly
-        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-        charts.hourly = new Chart(hourlyCtx, {
-            type: 'bar',
-            data: { labels: [], datasets: [{ label:'Orders', data: [] }] },
-            options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+            // Payment (pie) - optional, only if canvas present
+            const payEl = document.getElementById('paymentMethodChart');
+            if (payEl) {
+                const ctx3 = payEl.getContext('2d');
+                if (charts.payment && typeof charts.payment.destroy === 'function') charts.payment.destroy();
+                charts.payment = new Chart(ctx3, {
+                    type: 'pie',
+                    data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+                    options: { responsive:true, maintainAspectRatio:false }
+                });
+            }
+
+            // Hourly (bar)
+            const hourlyEl = document.getElementById('hourlyChart');
+            if (hourlyEl) {
+                const ctx4 = hourlyEl.getContext('2d');
+                if (charts.hourly && typeof charts.hourly.destroy === 'function') charts.hourly.destroy();
+                charts.hourly = new Chart(ctx4, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [{ label: 'Orders', data: [] }] },
+                    options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+                });
+            }
         });
     }
 
-    // ---------- helpers / UI interactions ----------
+    /**
+     * updateTrendChart(period)
+     * - period: 'daily' | 'weekly' | 'monthly'
+     * This will fetch trend data and update/create the salesTrend chart.
+     */
     function updateTrendChart(period) {
-        document.querySelectorAll('[id$="TrendBtn"]').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(period + 'TrendBtn').classList.add('active');
+        // buttons toggle (safe select)
+        try {
+            document.querySelectorAll('[id$="TrendBtn"]').forEach(btn => btn.classList.remove('active'));
+            const btnEl = document.getElementById(period + 'TrendBtn');
+            if (btnEl) btnEl.classList.add('active');
+        } catch (e) {}
 
-        // fetch new trend data for the chosen period
-        fetch(routes.trend + `?period=${period}`)
-            .then(r => r.json())
+        // fetch trend from server (existing route variable usage)
+        fetch(routes.trend + `?period=${period}`, { credentials: 'same-origin', headers: { Accept: 'application/json' }})
+            .then(r => {
+                if (!r.ok) throw new Error('Trend API HTTP ' + r.status);
+                return r.json();
+            })
             .then(json => {
+                // try multiple shapes: { trend: { labels:[], data:[] } } or direct { labels:[], data:[] }
                 const trend = json.trend ?? json;
-                if (!trend) return;
-                charts.salesTrend.data.labels = trend.labels ?? [];
-                charts.salesTrend.data.datasets[0].data = trend.data ?? [];
+                const labels = trend.labels ?? (trend.x ?? []);
+                const data = trend.data ?? (trend.values ?? trend.y ?? []);
+                // ensure chart exists, else create
+                if (!charts.salesTrend) {
+                    initializeCharts();
+                    // Wait a tick for chart to be created then update (safe fallback)
+                    setTimeout(() => {
+                        if (charts.salesTrend) {
+                            charts.salesTrend.data.labels = labels || [];
+                            charts.salesTrend.data.datasets[0].data = data || [];
+                            charts.salesTrend.update();
+                        }
+                    }, 250);
+                    return;
+                }
+                charts.salesTrend.data.labels = labels || [];
+                charts.salesTrend.data.datasets[0].data = data || [];
                 charts.salesTrend.update();
-            }).catch(err => console.error(err));
+            })
+            .catch(err => {
+                console.error('updateTrendChart error', err);
+            });
     }
+
+
 
     function generateReport() {
         showLoadingState();

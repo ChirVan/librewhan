@@ -26,6 +26,7 @@
                     </select>
                 </div>
                 <button class="btn btn-primary">Save</button>
+                <a class="btn btn-danger" href="{{ url('admin/users') }}">Cancel</a>
             </form>
         </div>
     </div>

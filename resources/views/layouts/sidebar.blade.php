@@ -147,12 +147,6 @@
             </span>
             <h4 class="text-section">ROLES MANAGEMENT</h4>
           </li>
-          <li class="nav-item {{ request()->is('auth/usermanagement') ? 'active' : '' }}">
-            <a href="{{ url('admin/users') }}">
-              <i class="fas fa-users-cog"></i>
-              <p>User Management</p>
-            </a>
-          </li>
   @elseif($usertype === 'barista' || $userrole === 'barista')
 
           <li class="nav-section">
