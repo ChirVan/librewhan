@@ -127,6 +127,13 @@
     <!-- Librewhan Cafe JS -->
     <script src="{{ asset('assets/js/kaiadmin.min.js') }}"></script>
 
+    {{-- Allow pages to push scripts (used by header for notification mobile hooks) --}}
+    @stack('scripts')
+
+    {{-- Alpine must be loaded before Livewire so Livewire can register its Alpine plugin --}}
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @livewireScripts
+
     @stack('scripts')
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @livewireScripts

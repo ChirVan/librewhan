@@ -1,6 +1,6 @@
-<div class="sidebar" data-background-color="dark">
+<div class="sidebar" data-background-color="light">
   <div class="sidebar-logo">
-    <div class="logo-header" data-background-color="dark">
+    <div class="logo-header" data-background-color="light">
       <a href="{{ route('orders.take') }}" class="logo">
         <span class="logo-text text-white fw-bold fs-4">
           <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Librewhan Cafe" class="me-2" style="width: 30px; height: 30px; border-radius: 5px;">Librewhan Cafe
@@ -14,9 +14,9 @@
           <i class="gg-menu-left"></i>
         </button>
       </div>
-      <button class="topbar-toggler more">
-        <i class="gg-more-vertical-alt"></i>
-      </button>
+      {{-- <button class="topbar-toggler more">
+        <i class="gg-more-vertical-alt"></i> HERE'S THE CULPRIT, YOU'VE BEEN TORTURING ME BECAUSE I THOUGH YOU WERE AT THE NAV-BAR IN MOBILE YOU クソ
+      </button> --}}
     </div>
   </div>
   <div class="sidebar-wrapper scrollbar scrollbar-inner">
@@ -210,7 +210,7 @@
 </div>
 
 <style>
-  .sidebar[data-background-color="dark"], .sidebar-logo .logo-header[data-background-color="dark"] {
+  .sidebar[data-background-color="light"], .sidebar-logo .logo-header[data-background-color="light"] {
     background-color: #111 !important;
   }
 </style>

@@ -1,5 +1,23 @@
 <div class="main-header">
 
+  {{-- Mobile top brand (visible only on small screens) --}}
+  <div class="mobile-top-brand d-lg-none">
+    <a href="{{ route('orders.take') }}" class="mobile-brand d-inline-flex align-items-center">
+      <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="{{ config('app.name') }}" style="width:45px;height:45px;border-radius:4px;margin-right:8px;">
+      <span class="fw-bold text-white">{{ config('app.name') }} Cafe</span>
+    </a>
+  </div>
+
+  {{-- Mobile floating sidebar toggles (visible only on small screens) --}}
+  <div class="mobile-floating-toggle d-lg-none" aria-hidden="false" style="display:none;">
+    {{-- <button class="btn btn-toggle toggle-sidebar floating-sidebar-toggle" aria-label="Toggle sidebar (mobile)">
+      <i class="gg-menu-right"></i>
+    </button> --}}
+    <button class="btn btn-toggle sidenav-toggler floating-sidebar-toggle" aria-label="Toggle sidenav (mobile)">
+      <i class="gg-menu-left"></i>
+    </button>
+  </div>
+
   <div class="main-header-logo">
     <!-- Logo Header -->
     <div class="logo-header" data-background-color="dark">
@@ -16,14 +34,14 @@
           <i class="gg-menu-left"></i>
         </button>
       </div>
-      <button class="topbar-toggler more">
+      {{-- <button class="topbar-toggler more">
         <i class="gg-more-vertical-alt"></i>
-      </button>
+      </button> --}}
     </div>
   </div>
 
   <!-- Navbar Header -->
-  <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom" style='box-shadow: 1px 10px 15px #575757;'>
+  <nav id="mainNavbar" class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom" style='box-shadow: 1px 10px 15px #575757;'>
     <div class="container-fluid bg-neutral-300">
       <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex">
         <span class="fw-bold fs-5 text-dark"><h2>Librewhan <span class="text-warning">Cafe</span></h2>
@@ -80,6 +98,12 @@
         @endphp
         @if($isAdmin)
 
+        <li class="nav-item topbar-icon dropdown hidden-caret d-lg-none" id="home_icon">
+          <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+              <i class="fas fa-home"></i>
+          </a>
+        </li>
+
         <li class="nav-item topbar-icon dropdown hidden-caret">
           <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fa fa-bell" style="font-size: 20px;"></i>
@@ -109,12 +133,7 @@
         @endif
 
         <li class="nav-item topbar-user dropdown hidden-caret">
-          <a
-            class="dropdown-toggle profile-pic"
-            data-bs-toggle="dropdown"
-            href="#"
-            aria-expanded="false"
-          >
+          <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
             <div class="avatar-sm">
               <img
                 src="{{ optional(auth()->user())->profile_photo_url ?? asset('assets/img/chadengle.jpg') }}"
@@ -142,7 +161,7 @@
                   </div>
                   <div class="u-text">
                     <h4>{{ auth()->user()->name }}</h4>
-                    <p class="text-muted">
+                    <p class="text-muted" id="role_display">
                       @if(session('user_role') === 'barista')
                         Barista Account
                       @elseif(session('user_role') === 'admin')
@@ -421,6 +440,224 @@
   .notif-box .dismiss-alert:hover { color:#e3342f; cursor:pointer; }
 
   .notif-box .dropdown-footer { padding: 8px; border-top:1px solid rgba(0,0,0,0.03); text-align:center; }
+
+  .mobile-top-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    background: linear-gradient(180deg, rgba(20,20,20,0.95), rgba(10,10,10,0.95));
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    z-index: 1200;
+  }
+  .mobile-top-brand .mobile-brand { color: #fff; text-decoration: none; font-size: 25px; }
+  .mobile-top-brand img { display:inline-block; vertical-align:middle; }
+
+  /* Mobile floating toggle (reuse same behavior/classes as desktop toggles) */
+  .mobile-floating-toggle { display: none; }
+  .mobile-floating-toggle .floating-sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg,#202427,#111314);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.03);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    font-size: 16px;
+  }
+
+  @media (max-width: 991.98px) {
+    .mobile-floating-toggle {
+      display: flex !important;
+      gap: 8px;
+      position: fixed !important;
+      left: 12px !important;
+      top: 8px !important;
+      z-index: 1300 !important;
+      transform: none !important;
+      -webkit-transform: none !important;
+      /* nudge for safe area on devices with non-zero inset */
+      left: calc(12px + env(safe-area-inset-left, 0px)) !important;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .mobile-top-brand { display: none !important; }
+  }
+  @media (max-width: 991.98px) {
+    /* make main navbar fixed to bottom */
+    #mainNavbar {
+      position: fixed !important;
+      height: calc(56px + env(safe-area-inset-bottom, 0px));
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1050;
+      border-top: 1px solid #333;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.45);
+      background: linear-gradient(180deg, rgba(26,26,26,0.98), rgba(16,16,16,0.98));
+      backdrop-filter: blur(6px);
+      padding: 6px 10px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      transform: none !important;         /* ensure fixed is viewport-anchored */
+      -webkit-transform: none !important; /* ensure no ancestor transform interference */
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    #mainNavbar .navbar-nav .nav-item {
+      padding: 8px 6px;
+      min-width: 56px;
+    }
+
+    /* ensure header container also has no transform (fixes clipping / floating) */
+    .main-header, .logo-header, .main-header-logo {
+      transform: none !important;
+      -webkit-transform: none !important;
+    }
+
+    #mainNavbar .navbar-nav .nav-item .fa,
+    #mainNavbar .navbar-nav .nav-item img.avatar-img {
+      font-size: 20px;
+      color: #f8f9fb;
+    }
+
+    /* dropdown appearance: match bottom bar style and sit above it */
+    .notif-box, .dropdown-menu.dropdown-user {
+      border-radius: 12px !important;
+      background: #26303a !important;
+      color: #ffffff;
+      padding: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6) !important;
+    }
+    #role_display { background-color: #999; }
+    .notif-box, .dropdown-item { background:#fff; color:#222; }
+
+    /* subtle touch target increase for badges */
+    .notification, .notification-badge { min-width:22px; min-height:22px; line-height:18px; font-size:11px; padding:2px 7px; }
+
+    body.dropdown-open {
+      padding-bottom: 84px !important;
+    }
+
+    /* tighten container and align items horizontally */
+    #mainNavbar .container-fluid {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 8px;
+      padding: 0;
+    }
+
+    /* style nav items as vertical stacks (icon + label) */
+    #mainNavbar .navbar-nav {
+      display: flex !important;
+      width: 100%;
+      justify-content: space-around;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+      margin: 0;
+    }
+    #mainNavbar .navbar-nav .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #ddd;
+      font-size: 11px;
+      padding: 6px 4px;
+    }
+    #mainNavbar .navbar-nav .nav-item .fa,
+    #mainNavbar .navbar-nav .nav-item .avatar-sm,
+    #mainNavbar .navbar-nav .nav-item i {
+      color: #ddd;
+      font-size: 18px;
+    }
+
+    /* ensure dropdown menus render above the fixed navbar */
+    .notif-box, .dropdown-menu {
+      z-index: 2000 !important;
+    }
+
+    /* hide desktop-only header elements when pinned to bottom */
+    .navbar-form, .logo-header .logo-text, .main-header-logo { display: none !important; }
+
+    /* make notif dropdown full-width-ish on mobile for easier use */
+    .notif-box {
+      /* relocated: fixed and above bottom navbar */
+      position: fixed !important;
+      bottom: calc(56px + 12px + env(safe-area-inset-bottom, 0px)) !important; /* 56px ~= bottom nav height */
+      left: 8px !important;
+      right: 8px !important;
+      margin: 0 auto !important;
+      max-width: calc(100% - 16px) !important;
+      width: auto !important;
+      border-radius: 8px !important;
+      transform: none !important;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45) !important;
+      overflow: visible !important;
+      z-index: 2100 !important;
+    }
+
+    /* ensure shown dropdowns use fixed positioning and are not clipped */
+    .topbar-icon .dropdown-menu.show,
+    .notif-box.show,
+    .notif-box[aria-expanded="true"] {
+      position: fixed !important;
+      bottom: calc(56px + 12px + env(safe-area-inset-bottom, 0px)) !important;
+      left: 8px !important;
+      right: 8px !important;
+      top: auto !important;
+      transform: none !important;
+      margin: 0 auto !important;
+    }
+
+    /* small safety padding so content behind the bottom nav isn't covered when dropdown open */
+    body.dropdown-open {
+      padding-bottom: 84px !important;
+    }
+
+    #home_icon {
+      display: inline;
+    }
+
+    /* profile dropdown: ul.dropdown-menu.dropdown-user and .topbar-user .dropdown-menu */
+    .dropdown-menu.dropdown-user,
+    .topbar-user .dropdown-menu {
+      min-width: auto !important;
+      max-width: calc(100% - 16px) !important;
+      position: fixed !important;
+      bottom: calc(56px + 12px + env(safe-area-inset-bottom, 0px)) !important;
+      left: 8px !important;
+      right: 8px !important;
+      top: auto !important;
+      transform: none !important;
+      margin: 0 auto !important;
+      border-radius: 8px !important;
+      z-index: 2100 !important;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45) !important;
+    }
+    .topbar-icon .dropdown-menu.show,
+       .notif-box.show,
+       .notif-box[aria-expanded="true"],
+       .dropdown-menu.dropdown-user.show,
+       .topbar-user .dropdown-menu.show {
+       position: fixed !important;
+       bottom: calc(56px + 12px + env(safe-area-inset-bottom, 0px)) !important;
+       left: 8px !important;
+       right: 8px !important;
+       top: auto !important;
+       transform: none !important;
+       margin: 0 auto !important;
+     }
+
+  }
+}
 </style>
 
 @push('scripts')
@@ -433,6 +670,8 @@
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
   const bellAnchor = document.getElementById('notifDropdown');
+  const mobileTrigger = document.getElementById('mobileNotifTrigger');
+  const mobileCountEl = document.getElementById('mobileNotifCount');
 
   function ensureBadge() {
     if (!bellAnchor) return null;
@@ -472,7 +711,6 @@
   }
 
   function safeImageUrl(a) {
-    // common fields: image, image_url, product.image
     if (!a) return null;
     if (a.image_url) return a.image_url;
     if (a.image) return a.image;
@@ -490,19 +728,79 @@
   }
 
   function updateBadgeAndClass(count) {
+    // desktop badge + class
     const badge = ensureBadge();
     if (badge) badge.textContent = count > 0 ? String(count) : '';
-    if (!bellAnchor) return;
-    if (count > 0) bellAnchor.classList.add('has-alerts'); else bellAnchor.classList.remove('has-alerts');
+    if (bellAnchor) {
+      if (count > 0) bellAnchor.classList.add('has-alerts'); else bellAnchor.classList.remove('has-alerts');
+    }
+
+    // mobile count + class (support multiple mobileCount elements if present)
+    if (mobileCountEl) {
+      mobileCountEl.textContent = count > 0 ? String(count) : '';
+      mobileCountEl.style.display = count > 0 ? 'flex' : 'none';
+    } else {
+      // try to find any .mobile-bottom-nav .badge
+      const mobileBadges = document.querySelectorAll('.mobile-bottom-nav .badge, #mobileNotifCount');
+      mobileBadges.forEach(b => {
+        b.textContent = count > 0 ? String(count) : '';
+        b.style.display = count > 0 ? 'flex' : 'none';
+      });
+    }
+
+    // mobile trigger animation toggle
+    if (mobileTrigger) {
+      if (count > 0) mobileTrigger.classList.add('has-alerts'); else mobileTrigger.classList.remove('has-alerts');
+    }
   }
 
   async function renderDropdown(alerts) {
     const box = ensureDropdownContainer();
-    if (!box) return;
-    const headerHtml = `<li><div class="dropdown-title text-white">Stock Alerts ( <span class='text-warning fs-4'>${alerts.length}</span> )</div></li>`;
-    let listHtml = '';
-    if (alerts.length > 0) {
-      listHtml += '<li><div class="notif-scroll">';
+    const alertsCount = Array.isArray(alerts) ? alerts.length : 0;
+
+    // BUILD desktop HTML (if desktop exists)
+    if (box) {
+      const headerHtml = `<li><div class="dropdown-title text-white">Stock Alerts ( <span class='text-warning fs-4'>${alertsCount}</span> )</div></li>`;
+      let listHtml = '';
+      if (alertsCount > 0) {
+        listHtml += '<li><div class="notif-scroll">';
+        alerts.forEach(a => {
+          const id = a.id ?? a.alert_id ?? '';
+          const pname = productNameFromAlert(a);
+          const created = a.created_at ?? a.created ?? a.createdAt ?? '';
+          const priority = a.priority ?? a.level ?? 'info';
+          const message = (a.message && String(a.message).length > 0) ? a.message : `Check ${pname}`;
+          const colorClass = priority === 'critical' ? 'text-danger' : (priority === 'high' ? 'text-warning' : 'text-muted');
+          const img = safeImageUrl(a);
+          const imgTag = img ? `<div style="flex:0 0 44px;"><img src="${escapeHtml(img)}" alt="${escapeHtml(pname)}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,.06)"></div>` : `<div style="width:44px; text-align:center; flex: 0 0 44px;"><i class="fas fa-box ${colorClass}" style="font-size:20px"></i></div>`;
+          listHtml += `
+            <a href="${stockPageBase}?search=${encodeURIComponent(pname)}" class="dropdown-item" data-alert-id="${id}">
+              ${imgTag}
+              <div style="flex:1; min-width:0;">
+                <div class="notif-meta">${created ? escapeHtml(created) : ''}</div>
+                <div class="fw-bold" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(pname)}</div>
+                <div class="notif-message">${escapeHtml(message)}</div>
+              </div>
+              <div style="flex:0 0 36px; text-align:right;">
+                <button class="dismiss-alert btn btn-sm" data-id="${id}" aria-label="Dismiss"><i class="fas fa-times"></i></button>
+              </div>
+            </a>
+          `;
+        });
+        listHtml += '</div></li>';
+      } else {
+        listHtml = `<li><div class="p-3 text-center text-muted">No alerts</div></li>`;
+      }
+      const footerHtml = `<li class="dropdown-footer"><button id="markAllReadBtn" class="btn btn-sm btn-link text-warning text-decoration-none">Mark all as read</button></li>`;
+      box.innerHTML = headerHtml + listHtml + footerHtml;
+    }
+
+    // BUILD mobile HTML and populate all mobile lists (dropdown and offcanvas)
+    const mobileContainers = document.querySelectorAll('#mobileNotifList');
+    const mobileHeader = `<div class="dropdown-title text-white">Stock Alerts ( <span class='text-warning fs-4'>${alertsCount}</span> )</div>`;
+    let mobileInner = '';
+    if (alertsCount > 0) {
+      mobileInner += '<div class="notif-scroll">';
       alerts.forEach(a => {
         const id = a.id ?? a.alert_id ?? '';
         const pname = productNameFromAlert(a);
@@ -512,7 +810,7 @@
         const colorClass = priority === 'critical' ? 'text-danger' : (priority === 'high' ? 'text-warning' : 'text-muted');
         const img = safeImageUrl(a);
         const imgTag = img ? `<div style="flex:0 0 44px;"><img src="${escapeHtml(img)}" alt="${escapeHtml(pname)}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,.06)"></div>` : `<div style="width:44px; text-align:center; flex: 0 0 44px;"><i class="fas fa-box ${colorClass}" style="font-size:20px"></i></div>`;
-        listHtml += `
+        mobileInner += `
           <a href="${stockPageBase}?search=${encodeURIComponent(pname)}" class="dropdown-item" data-alert-id="${id}">
             ${imgTag}
             <div style="flex:1; min-width:0;">
@@ -526,12 +824,17 @@
           </a>
         `;
       });
-      listHtml += '</div></li>';
+      mobileInner += '</div>';
     } else {
-      listHtml = `<li><div class="p-3 text-center text-muted">No alerts</div></li>`;
+      mobileInner = `<div class="p-3 text-center text-muted">No alerts</div>`;
     }
-    const footerHtml = `<li class="dropdown-footer"><button id="markAllReadBtn" class="btn btn-sm btn-link text-warning text-decoration-none">Mark all as read</button></li>`;
-    box.innerHTML = headerHtml + listHtml + footerHtml;
+    // Apply to every mobile container found
+    mobileContainers.forEach(c => {
+      c.innerHTML = mobileHeader + mobileInner;
+    });
+
+    // Update mobile badge/count + desktop badge/class
+    updateBadgeAndClass(alertsCount);
   }
 
   // show simple toast for errors/info
@@ -545,17 +848,13 @@
     setTimeout(()=>{ if(t.parentElement) t.remove(); }, 4500);
   }
 
-  // Mark single optimistic: remove DOM entry & decrement badge immediately, then POST.
+  // optimistic single mark/delete logic unchanged
   async function markSingleAndRemove(id, anchorElem) {
     if (!id) return false;
-    // optimistic UI snapshot for rollback
     const badge = ensureBadge();
     const prevBadge = badge ? (Number(badge.textContent) || 0) : 0;
     const prevHTML = anchorElem ? anchorElem.outerHTML : null;
-    // remove UI immediately
-    if (anchorElem && anchorElem.parentElement) {
-      anchorElem.remove();
-    }
+    if (anchorElem && anchorElem.parentElement) anchorElem.remove();
     updateBadgeAndClass(Math.max(0, prevBadge - 1));
 
     try {
@@ -567,19 +866,13 @@
           'Accept': 'application/json'
         }
       });
-      if (res.ok || res.status === 204) {
-        // success - leave optimistic update
-        return true;
-      }
-      // attempt parse JSON for success flag
+      if (res.ok || res.status === 204) return true;
       let json = null;
       try { json = await res.json(); } catch(e){}
       if (json && (json.success || json.ok)) return true;
 
-      // failure: rollback UI
       if (prevHTML && ensureDropdownContainer()) {
         const box = ensureDropdownContainer();
-        // put item back at top of scroll area
         const scrollContainer = box.querySelector('.notif-scroll') || box;
         const wrapper = document.createElement('div');
         wrapper.innerHTML = prevHTML;
@@ -591,7 +884,6 @@
       showToast('Failed to mark alert read (server error).', 'danger');
       return false;
     } catch (err) {
-      // network or other error: rollback UI
       if (prevHTML && ensureDropdownContainer()) {
         const box = ensureDropdownContainer();
         const scrollContainer = box.querySelector('.notif-scroll') || box;
@@ -617,6 +909,10 @@
         updateBadgeAndClass(0);
         const box = ensureDropdownContainer();
         if (box) box.innerHTML = `<li><div class="dropdown-title">Stock Alerts (0)</div></li><li><div class="p-3 text-center text-muted">No alerts</div></li>`;
+        // clear mobile lists
+        document.querySelectorAll('#mobileNotifList').forEach(c => {
+          c.innerHTML = `<div class="p-3 text-center text-muted">No alerts</div>`;
+        });
       } else {
         showToast('Mark all as read failed (server).', 'warning');
       }
@@ -625,7 +921,7 @@
     }
   }
 
-  // delegated clicks
+  // delegated clicks (unchanged)
   document.addEventListener('click', async function(e) {
     const dismiss = e.target.closest('.dismiss-alert');
     if (dismiss) {
@@ -647,7 +943,6 @@
         const id = alertAnchor.dataset.alertId;
         const href = alertAnchor.href;
         await markSingleAndRemove(id, alertAnchor);
-        // small delay for UI update
         setTimeout(()=>{ window.location.href = href; }, 120);
       }
       return;
@@ -665,6 +960,31 @@
     } catch (err) {
       console.error('Error loading alerts', err);
     }
+  }
+
+  // 
+
+  try {
+    const attachDropdownOpenClass = () => {
+      const selectors = [
+        document.querySelector('.topbar-icon.dropdown'), // notif wrapper
+        document.querySelector('.topbar-user.dropdown')  // profile wrapper
+      ].filter(Boolean);
+
+      selectors.forEach(node => {
+        node.addEventListener('show.bs.dropdown', () => document.body.classList.add('dropdown-open'));
+        node.addEventListener('hide.bs.dropdown', () => document.body.classList.remove('dropdown-open'));
+      });
+    };
+
+    // If DOM already loaded, attach immediately; else wait
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', attachDropdownOpenClass);
+    } else {
+      attachDropdownOpenClass();
+    }
+  } catch (err) {
+    console.warn('dropdown-open wiring failed', err);
   }
 
   // start

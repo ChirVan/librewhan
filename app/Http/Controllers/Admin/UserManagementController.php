@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
+use App\Mail\FormattedMail;
 
 class UserManagementController extends Controller
 {
@@ -91,15 +92,30 @@ class UserManagementController extends Controller
 
     public function resetPassword(User $user)
     {
-        $new = Str::random(10);
+       $new = Str::random(10);
         $user->password = Hash::make($new);
         $user->save();
 
-        Mail::raw("Your password was reset by admin. New password: {$new}", function ($m) use ($user) {
-            $m->to($user->email)->subject('Password reset');
-        });
+        $subject = 'Password reset';
+        $bodyHtml = "<p>Your password was reset by admin.</p><p><strong>New password:</strong> {$new}</p>"
+                  . "<p>Please login and change this password as soon as possible.</p>";
 
-        return redirect()->route('admin.users.index')->with('status', 'Password reset and emailed.');
+        try {
+            // Send synchronously (quick, no queue worker required)
+            Mail::to($user->email)->send(new FormattedMail($subject, $bodyHtml));
+
+            return redirect()->route('admin.users.index')->with('status', 'Password reset and email sent.');
+        } catch (\Exception $e) {
+            \Log::warning('Password reset email failed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Fallback: still inform admin the password was changed
+            return redirect()->route('admin.users.index')
+                             ->with('status', 'Password reset. Email could not be sent; check logs.');
+        }
     }
 
     public function toggleStatus(User $user)

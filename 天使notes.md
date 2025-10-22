@@ -1,9 +1,11 @@
 
-ISSUE
+ISSUES
 
-In cart, change shows negative output, leading to confusing total payment change
+Stock Update button not working
 
-INFORMATION
+
+/***********************************************************************************************************************/
+NOTES
 
 Trigger low stocks notifications:
 Run this in tinker
@@ -16,9 +18,24 @@ $controller = app(\App\Http\Controllers\StockController::class);
 });
 
 
-JSON Format for adding customizations for products in takeOrder
+/***********************************************************************************************************************/
+HOW TO CALL FORMATTED EMAIL 
 
-Milktea
+<?php
+use App\Mail\FormattedMail;
+use Illuminate\Support\Facades\Mail;
+
+$subject = 'Inventory alert';
+$bodyHtml = '<p>Product <strong>Milk</strong> is low in stock.</p><p><a class="btn" href="https://example.com">View product</a></p>';
+Mail::to('user@example.com')->send(new FormattedMail($subject, $bodyHtml));
+
+
+
+/***********************************************************************************************************************/
+JSON Format for adding customizations for products in takeOrder, put in description column
+
+For Milktea
+/**/
 {
   "groups": [
     {
@@ -43,8 +60,10 @@ Milktea
     }
   ]
 }
+/**/
 
-Frappe (12oz / 16oz):
+For Frappe (12oz / 16oz):
+/**/
 {
   "groups": [
     {
@@ -68,8 +87,10 @@ Frappe (12oz / 16oz):
     }
   ]
 }
+/**/
 
-Snack (no sizes — quantity only; keep modal notes):
+For Snack (no sizes — quantity only; keep modal notes):
+/**/
 {
   "groups": [
     {
@@ -80,8 +101,10 @@ Snack (no sizes — quantity only; keep modal notes):
     }
   ]
 }
+/**/
 
-Simple product with one price tier (base price fallback will also work):
+For Simple product with one price tier (base price fallback will also work):
+/**/
 {
   "groups": [
     {
@@ -94,4 +117,31 @@ Simple product with one price tier (base price fallback will also work):
     }
   ]
 }
+/**/
 
+
+/***********************************************************************************************************************/
+How to Pull in Domain
+
+Connect to droplet in PuTTy
+
+cd /var/www/librewhan
+
+
+
+
+
+/***********************************************************************************************************************/
+SSL Certificate
+
+Renew
+sudo certbot renew --dry-run
+
+
+/***********************************************************************************************************************/
+Expenses
+
+Digital Ocean
+After Payment Method: ₱812.20
+
+Namecheap Domain Name: ₱69

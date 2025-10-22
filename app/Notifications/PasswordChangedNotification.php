@@ -17,9 +17,14 @@ class PasswordChangedNotification extends Notification
 
     public function toMail($notifiable)
     {
+        $body = '<p>This is a confirmation that your account password was successfully changed.</p>'
+              . '<p>If you did not perform this action, please contact support or use the password reset link to secure your account.</p>';
+
         return (new MailMessage)
             ->subject('Your password was changed')
-            ->line('This is a confirmation that your account password was successfully changed.')
-            ->line('If you did not perform this action, please contact support or use the password reset link to secure your account.');
+            ->view('emails.formatted', [
+                'title' => 'Your password was changed',
+                'bodyHtml' => $body,
+            ]);
     }
 }
