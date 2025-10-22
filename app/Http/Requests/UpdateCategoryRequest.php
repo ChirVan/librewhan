@@ -21,7 +21,8 @@ class UpdateCategoryRequest extends FormRequest {
             'color' => 'nullable|string|max:20',
             'status' => 'required|in:active,inactive',
             'featured' => 'sometimes|boolean',
-            'display_order' => 'nullable|integer|min:0'
+            'display_order' => 'nullable|integer|min:0',
+            'customization_json' => 'nullable|string',
         ];
     }
 }

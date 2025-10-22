@@ -32,7 +32,13 @@ class ProductController extends Controller
         if ($cid = $request->input('category_id')) $q->where('category_id',$cid);
         if (($status = $request->input('status')) && $status !== 'all') $q->where('status',$status);
         $q->orderBy('display_order')->orderBy('name');
-        return response()->json(['data'=>$q->get()]);
+        $products = $q->get();
+        // Attach category customization_json to each product
+        $products->transform(function($p){
+            $p->customization_json = $p->category && $p->category->customization_json ? $p->category->customization_json : null;
+            return $p;
+        });
+        return response()->json(['data'=>$products]);
     }
 
     public function store(Request $request){
@@ -102,6 +108,8 @@ class ProductController extends Controller
     }
 
     public function metaCategories(){
-        return response()->json(['categories'=>Category::active()->orderBy('name')->get(['id','name'])]);
+        return response()->json([
+            'categories'=>Category::active()->orderBy('name')->get(['id','name','customization_json'])
+        ]);
     }
 }

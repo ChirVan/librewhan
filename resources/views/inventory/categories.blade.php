@@ -277,6 +277,33 @@
                                 <small class="form-text text-muted d-block">Featured categories appear prominently in the menu</small>
                             </div>
                         </div>
+                        <div class="col-md-12 mt-3">
+                            <div class="card">
+                                <div class="card-header py-2">
+                                    <strong>Customizations</strong>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label">Choose Size Preset</label>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="preset-sml">Small, Medium, Large</button>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="preset-ml">Medium, Large</button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Sizes</label>
+                                        <div id="sizes-list"></div>
+                                        <button type="button" class="btn btn-sm btn-success" id="add-size">Add Size</button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Add-ons</label>
+                                        <div id="addons-list"></div>
+                                        <button type="button" class="btn btn-sm btn-success" id="add-addon">Add Add-on</button>
+                                    </div>
+                                    <input type="hidden" name="customization_json" id="customization_json">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -632,6 +659,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function saveCategory() {
+        // Ensure customization_json is up to date before reading form data
+        document.getElementById('customization_json').value = JSON.stringify({sizes,addons});
         const form = document.getElementById('categoryForm');
         if (!form.reportValidity()) return;
 
@@ -699,6 +728,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('categoryStatus').value = category.status;
                 document.getElementById('categoryOrder').value = category.display_order;
                 document.getElementById('categoryFeatured').checked = category.featured;
+                // Load customization JSON
+                try {
+                    const {sizes,addons} = JSON.parse(category.customization_json || '{}');
+                    window.sizes = sizes || [];
+                    window.addons = addons || [];
+                } catch(e) {
+                    window.sizes = [];
+                    window.addons = [];
+                }
+                renderSizes();
+                renderAddons();
                 new bootstrap.Modal(document.getElementById('categoryModal')).show();
             });
     };
@@ -716,17 +756,51 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.deleteCategoryModal = function(id) {
-        // Simple confirm route
-        if (!confirm('Delete this category? (Must have no products)')) return;
-        fetch("{{ url('/inventory/categories') }}/"+id, {
-            method:'DELETE',
-            headers:{
-                'Accept':'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then(r=>r.json()).then(resp=>{
-            if (resp.success) loadFromServer(); else alert(resp.message||'Delete failed');
-        });
+        // Show the delete confirmation modal and set up handlers
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        // Fetch category info for display
+        const cat = allCategories.find(c => c.id === id);
+        document.getElementById('deleteCategoryName').textContent = cat ? cat.name : '';
+        document.getElementById('deleteCategoryProducts').textContent = cat ? (cat.products_count || 0) : '0';
+        // Remove previous event listeners by cloning
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        newConfirmBtn.onclick = function() {
+            fetch("{{ url('/inventory/categories') }}/"+id, {
+                method:'DELETE',
+                headers:{
+                    'Accept':'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            }).then(r=>r.json()).then(resp=>{
+                if (resp.success) {
+                    loadFromServer();
+                    modal.hide();
+                } else {
+                    alert(resp.message||'Delete failed');
+                }
+            });
+        };
+        // Deactivate Instead button
+        const deactivateBtn = document.getElementById('deactivateCategoryBtn');
+        const newDeactivateBtn = deactivateBtn.cloneNode(true);
+        deactivateBtn.parentNode.replaceChild(newDeactivateBtn, deactivateBtn);
+        newDeactivateBtn.onclick = function() {
+            fetch("{{ url('/api/categories') }}/"+id+"/toggle-status", {
+                method:'PATCH',
+                headers:{
+                    'Accept':'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            }).then(r=>r.json()).then(resp=>{
+                if (resp.success) {
+                    loadFromServer();
+                    modal.hide();
+                }
+            });
+        };
+        modal.show();
     };
 
     window.viewCategoryProducts = function(id) {
@@ -842,9 +916,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>`;
     }
 
-    function debounce(fn, wait){
-        let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait); };
-    }
+        // Customization modal logic
+        window.sizes = [];
+        window.addons = [];
+
+            window.renderSizes = function renderSizes() {
+                const list = document.getElementById('sizes-list');
+                if (!list) return;
+                list.innerHTML = window.sizes.map((s, i) => `
+                    <div class='input-group mb-2'>
+                        <input type='text' class='form-control' placeholder='Size name' value='${s.name}' onchange='window.sizes[${i}].name=this.value'>
+                        <input type='number' class='form-control' placeholder='Price' value='${s.price}' min='0' step='0.01' onchange='window.sizes[${i}].price=this.value'>
+                        <button type='button' class='btn btn-danger' onclick='window.sizes.splice(${i},1);window.renderSizes();'>Remove</button>
+                    </div>
+                `).join('');
+            }
+            window.renderAddons = function renderAddons() {
+                const list = document.getElementById('addons-list');
+                if (!list) return;
+                list.innerHTML = window.addons.map((a, i) => `
+                    <div class='input-group mb-2'>
+                        <input type='text' class='form-control' placeholder='Add-on name' value='${a.name}' onchange='window.addons[${i}].name=this.value'>
+                        <input type='number' class='form-control' placeholder='Price' value='${a.price}' min='0' step='0.01' onchange='window.addons[${i}].price=this.value'>
+                        <button type='button' class='btn btn-danger' onclick='window.addons.splice(${i},1);window.renderAddons();'>Remove</button>
+                    </div>
+                `).join('');
+            }
+
+        document.getElementById('preset-sml').onclick = function() {
+            let base = prompt('Enter base price for Small size:', '0');
+            base = parseFloat(base) || 0;
+            window.sizes = [
+                {name:'Small',price:base},
+                {name:'Medium',price:base+10},
+                {name:'Large',price:base+20}
+            ];
+            renderSizes();
+        };
+        document.getElementById('preset-ml').onclick = function() {
+            let base = prompt('Enter base price for Medium size:', '0');
+            base = parseFloat(base) || 0;
+            window.sizes = [
+                {name:'Medium',price:base},
+                {name:'Large',price:base+10}
+            ];
+            renderSizes();
+        };
+        document.getElementById('add-size').onclick = function() {
+            // Only add a new size, do not clear the list
+            window.sizes = window.sizes || [];
+            window.sizes.push({name:'',price:0});
+            renderSizes();
+        };
+        document.getElementById('add-addon').onclick = function() { window.addons.push({name:'',price:0}); renderAddons(); };
+
+        function debounce(fn, wait){
+                let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait); };
+        }
 });
 </script>
 @endsection

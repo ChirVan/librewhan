@@ -16,6 +16,7 @@ class Category extends Model
         'featured',
         'display_order',
         'description',
+        'customization_json',
     ];
 
     protected $casts = ['featured' => 'boolean'];

@@ -54,6 +54,8 @@ class CategoryController extends Controller
     public function store(StoreCategoryRequest $request) {
         $data = $request->validated();
         if (empty($data['slug'])) $data['slug'] = str($data['name'])->slug();
+        // Ensure customization_json is set
+        $data['customization_json'] = $request->input('customization_json', $data['customization_json'] ?? null);
         $cat = Category::create($data);
         return response()->json(['success'=>true,'category'=>$cat->loadCount('products')]);
     }
@@ -65,6 +67,8 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, Category $category) {
         $data = $request->validated();
         if (empty($data['slug'])) $data['slug'] = str($data['name'])->slug();
+        // Ensure customization_json is set
+        $data['customization_json'] = $request->input('customization_json', $data['customization_json'] ?? null);
         $category->update($data);
         return response()->json(['success'=>true,'category'=>$category->loadCount('products')]);
     }

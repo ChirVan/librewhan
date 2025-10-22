@@ -312,7 +312,23 @@
     if (raw.customization_json && typeof raw.customization_json === 'string') {
       try {
         const parsed = JSON.parse(raw.customization_json);
+        // If groups array, return as is
         if (parsed && Array.isArray(parsed.groups)) return parsed.groups;
+        // If sizes/addons, convert to groups
+        let groups = [];
+        if (Array.isArray(parsed.sizes) && parsed.sizes.length) {
+          groups.push({
+            key: 'size', label: 'Size', type: 'single', required: true,
+            choices: parsed.sizes.map((s, i) => ({ key: s.name || String(i), label: s.name || `Size ${i+1}`, price: Number(s.price ?? 0) }))
+          });
+        }
+        if (Array.isArray(parsed.addons) && parsed.addons.length) {
+          groups.push({
+            key: 'toppings', label: 'Add-ons', type: 'multi', required: false,
+            choices: parsed.addons.map((a, i) => ({ key: a.name || String(i), label: a.name || `Add-on ${i+1}`, price: Number(a.price ?? 0) }))
+          });
+        }
+        if (groups.length) return groups;
       } catch(e){}
     }
 
@@ -376,16 +392,24 @@
       // normalize products
       allProducts = items.map(p => {
         const raw = p;
-        const groups = parseCustomization(raw);
+        // Always parse customization_json for groups
+        let groups = [];
+        if (p.customization_json) {
+          groups = parseCustomization({ customization_json: p.customization_json });
+        } else {
+          groups = parseCustomization(raw);
+        }
         // extract size choices if present and compute min price
         let sizeChoices = [];
-        const sizeGroup = getGroupByKey(groups, 'size') || groups.find(g => (g.label||'').toLowerCase().includes('size'));
-        if (sizeGroup && Array.isArray(sizeGroup.choices)) {
-          sizeChoices = sizeGroup.choices.map((ch, idx) => ({
-            key: ch.key ?? String(idx),
-            label: ch.label ?? `Option ${idx+1}`,
-            price: Number(ch.price ?? 0)
-          }));
+        if (Array.isArray(groups)) {
+          const sizeGroup = groups.find(g => (g.key || '').toLowerCase() === 'size' || (g.label || '').toLowerCase().includes('size'));
+          if (sizeGroup && Array.isArray(sizeGroup.choices)) {
+            sizeChoices = sizeGroup.choices.map(ch => ({
+              key: ch.key ?? ch.label ?? '',
+              label: ch.label ?? ch.key ?? '',
+              price: Number(ch.price ?? 0)
+            }));
+          }
         }
 
         // compute min price for display
