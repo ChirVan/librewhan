@@ -110,7 +110,7 @@
         <div class="cafe-icon">
             <img src="{{ asset('assets/img/main-logo.jpg') }}" alt="Logo" style="width:75px;height:75px;border-radius:6px;">
         </div>
-        <h2>{{ config('app.name') }}</h2>
+        <h2>Librewhan Cafe</h2>
         <p>Welcome!</p>
       </div>
 
@@ -186,7 +186,7 @@
             <input type="checkbox" name="remember" id="remember" class="form-check-input" style="border: 1px solid #ca840c;">
             <label for="remember" class="form-check-label">Remember me</label>
           </div>
-          <a href="{{ route('password.request') }}" class="text-decoration-none" style="color:#ca840c;font-weight:600">Forgot password?</a>
+          
         </div>
 
         <button type="submit" class="btn btn-submit w-100 mb-2"><i class="fas fa-sign-in-alt me-2"></i>Sign In</button>

@@ -145,7 +145,7 @@
             <span class="sidebar-mini-icon">
               <i class="fa fa-ellipsis-h"></i>
             </span>
-            <h4 class="text-section">ROLES MANAGEMENT</h4>
+            
           </li>
   @elseif($usertype === 'barista' || $userrole === 'barista')
 
