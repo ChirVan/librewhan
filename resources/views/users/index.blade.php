@@ -4,6 +4,36 @@
 
 @section('content')
 
+<style>
+    /* Mobile-specific improvements */
+    @media (max-width: 768px) {
+        .mobile-card-view {
+            display: block !important;
+        }
+        .desktop-table-view {
+            display: none !important;
+        }
+        .mobile-user-card {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem;
+            transition: background-color 0.2s;
+        }
+        .mobile-user-card:hover {
+            background-color: #f8f9fa;
+        }
+        .mobile-user-card:last-child {
+            border-bottom: none;
+        }
+    }
+    @media (min-width: 769px) {
+        .mobile-card-view {
+            display: none !important;
+        }
+        .desktop-table-view {
+            display: block !important;
+        }
+    }
+</style>
 
 <div class="container py-4">
     <div class="page-inner">
@@ -26,7 +56,9 @@
 
         <div class="d-flex justify-content-end mb-3">
             <a href="{{ route('admin.users.create') }}" class="btn btn-primary px-4 fw-semibold">
-                <i class="fas fa-user-plus me-2"></i> Create User
+                <i class="fas fa-user-plus me-2"></i> 
+                <span class="d-none d-sm-inline">Create User</span>
+                <span class="d-inline d-sm-none">New</span>
             </a>
         </div>
 
@@ -36,45 +68,87 @@
 
         <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body p-0">
-                <div class="table-responsive rounded-4" style="overflow:hidden;">
-                    <table class="table table-striped table-hover align-middle mb-0" style="background:#f8fafc;">
-                        <thead class="table-light">
-                            <tr style="font-weight:600;">
-                                <th class="py-3 px-3">#</th>
-                                <th class="py-3 px-3">Name</th>
-                                <th class="py-3 px-3">Email</th>
-                                <th class="py-3 px-3">Role</th>
-                                <th class="py-3 px-3">Created</th>
-                                <th class="py-3 px-3 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach(\App\Models\User::orderBy('id','asc')->limit(50)->get() as $u)
-                                <tr>
-                                    <td class="py-3 px-3">{{ $u->id }}</td>
-                                    <td class="py-3 px-3">{{ $u->name }}</td>
-                                    <td class="py-3 px-3">{{ $u->email }}</td>
-                                    <td class="py-3 px-3 text-capitalize">{{ $u->usertype }}</td>
-                                    <td class="py-3 px-3">{{ $u->created_at->format('Y-m-d') }}</td>
-                                    <td class="py-3 px-3 text-center">
-                                        <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
-                                            <a href="{{ route('admin.users.edit', $u) }}" class="btn btn-sm btn-outline-info px-3">Edit</a>
-                                            <form action="{{ route('admin.users.resetPassword', $u) }}" method="POST" onsubmit="return confirm('Reset password for {{ $u->name }}?')" class="d-inline">
-                                                @csrf
-                                                <button class="btn btn-sm btn-outline-warning px-3">Reset Password</button>
-                                            </form>
-                                            <form action="{{ route('admin.users.destroy', $u) }}" method="POST" onsubmit="return confirm('Delete {{ $u->name }}?')" class="d-inline">
-                                                @csrf @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger px-3">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
+                <!-- Desktop Table View -->
+                <div class="desktop-table-view">
+                    <div class="table-responsive rounded-4" style="overflow:hidden;">
+                        <table class="table table-striped table-hover align-middle mb-0" style="background:#f8fafc;">
+                            <thead class="table-light">
+                                <tr style="font-weight:600;">
+                                    <th class="py-3 px-3">#</th>
+                                    <th class="py-3 px-3">Name</th>
+                                    <th class="py-3 px-3">Email</th>
+                                    <th class="py-3 px-3">Role</th>
+                                    <th class="py-3 px-3">Created</th>
+                                    <th class="py-3 px-3 text-center">Actions</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach(\App\Models\User::orderBy('id','asc')->limit(50)->get() as $u)
+                                    <tr>
+                                        <td class="py-3 px-3">{{ $u->id }}</td>
+                                        <td class="py-3 px-3">{{ $u->name }}</td>
+                                        <td class="py-3 px-3">{{ $u->email }}</td>
+                                        <td class="py-3 px-3 text-capitalize">{{ $u->usertype }}</td>
+                                        <td class="py-3 px-3">{{ $u->created_at->format('Y-m-d') }}</td>
+                                        <td class="py-3 px-3 text-center">
+                                            <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
+                                                <a href="{{ route('admin.users.edit', $u) }}" class="btn btn-sm btn-outline-info px-3">Edit</a>
+                                                <form action="{{ route('admin.users.resetPassword', $u) }}" method="POST" onsubmit="return confirm('Reset password for {{ $u->name }}?')" class="d-inline">
+                                                    @csrf
+                                                    <button class="btn btn-sm btn-outline-warning px-3">Reset Password</button>
+                                                </form>
+                                                <form action="{{ route('admin.users.destroy', $u) }}" method="POST" onsubmit="return confirm('Delete {{ $u->name }}?')" class="d-inline">
+                                                    @csrf @method('DELETE')
+                                                    <button class="btn btn-sm btn-outline-danger px-3">Delete</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <p class="text-muted small mt-3 ms-3">Showing latest 50 users.</p>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-card-view">
+                    @foreach(\App\Models\User::orderBy('id','asc')->limit(50)->get() as $u)
+                        <div class="mobile-user-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1">{{ $u->name }}</h6>
+                                    <small class="text-muted d-block mb-1">{{ $u->email }}</small>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge bg-secondary text-capitalize">{{ $u->usertype }}</span>
+                                        <small class="text-muted">ID: {{ $u->id }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-muted small mb-2">
+                                <i class="far fa-calendar"></i> {{ $u->created_at->format('M d, Y') }}
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <a href="{{ route('admin.users.edit', $u) }}" class="btn btn-sm btn-outline-info w-100">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </a>
+                                <form action="{{ route('admin.users.resetPassword', $u) }}" method="POST" onsubmit="return confirm('Reset password for {{ $u->name }}?')">
+                                    @csrf
+                                    <button class="btn btn-sm btn-outline-warning w-100">
+                                        <i class="fas fa-key me-1"></i> Reset Password
+                                    </button>
+                                </form>
+                                <form action="{{ route('admin.users.destroy', $u) }}" method="POST" onsubmit="return confirm('Delete {{ $u->name }}?')">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger w-100">
+                                        <i class="fas fa-trash me-1"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <p class="text-muted small mt-3 ms-3 mb-3">Showing latest 50 users.</p>
             </div>
         </div>
     </div>
