@@ -28,75 +28,28 @@
             </ul>
         </div>
 
-        <!-- Report Filters -->
+        <!-- Report Filters Removed -->
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h4 class="card-title">
+                            <h4 class="card-title mb-0">
                                 <i class="fas fa-filter text-info me-2"></i>
-                                Report Filters
+                                Sales Report
                             </h4>
-                            <button class="btn btn-primary btn-sm" id="generateReportBtn">
-                                <i class="fas fa-chart-bar"></i> Generate Report
-                            </button>
+                            <div class="d-flex gap-2">
+                                <!-- <button class="btn btn-success btn-sm" id="exportBtn">
+                                    <i class="fas fa-download"></i> Export
+                                </button> -->
+                                <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="window.location.reload();">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body py-3">
-                        <div class="row align-items-end">
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">Report Type</label>
-                                    <select class="form-control form-control-sm" id="reportType">
-                                        <option value="daily">Daily Sales</option>
-                                        <option value="weekly">Weekly Summary</option>
-                                        <option value="monthly" selected>Monthly Report</option>
-                                        <option value="yearly">Yearly Overview</option>
-                                        <option value="custom">Custom Range</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">From Date</label>
-                                    <input type="date" class="form-control form-control-sm" id="fromDate" value="{{ now()->startOfMonth()->toDateString() }}">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">To Date</label>
-                                    <input type="date" class="form-control form-control-sm" id="toDate" value="{{ now()->toDateString() }}">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">Category</label>
-                                    <select class="form-control form-control-sm" id="categoryFilter">
-                                        <option value="all">All Categories</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">Payment Mode</label>
-                                    <select class="form-control form-control-sm" id="paymentFilter">
-                                        <option value="all">All Modes</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-success btn-sm" id="exportBtn">
-                                        <i class="fas fa-download"></i> Export
-                                    </button>
-                                    <button class="btn btn-secondary btn-sm" id="refreshBtn">
-                                        <i class="fas fa-sync-alt"></i> Refresh
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Card body removed as requested -->
                 </div>
             </div>
         </div>
@@ -233,20 +186,23 @@
                     </div>
                     <div class="card-body">
                         <div class="top-products">
-                            @forelse ($topProducts as $product)
-                                <div class="product-item">
-                                    <div class="product-info">
-                                        <div class="product-name">{{ $loop->iteration }}. {{ $product->name }}</div>
-                                        <div class="product-category">{{ $product->category ?? '' }}</div>
+                            <!-- Blade fallback for server-side, JS will fill #topProductsList dynamically -->
+                            <div id="topProductsList">
+                                @forelse ($topProducts as $product)
+                                    <div class="product-item">
+                                        <div class="product-info">
+                                            <div class="product-name">{{ $loop->iteration }}. {{ $product->name }}</div>
+                                            <div class="product-category">{{ $product->category ?? '' }}</div>
+                                        </div>
+                                        <div class="product-stats">
+                                            <div class="product-sales">₱{{ number_format($product->total_sales, 2) }}</div>
+                                            <div class="product-quantity">{{ $product->total_qty }} sold</div>
+                                        </div>
                                     </div>
-                                    <div class="product-stats">
-                                        <div class="product-sales">₱{{ number_format($product->total_sales, 2) }}</div>
-                                        <div class="product-quantity">{{ $product->total_qty }} sold</div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="text-muted">No sales data available.</div>
-                            @endforelse
+                                @empty
+                                    <div class="text-muted">No sales data available.</div>
+                                @endforelse
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -288,9 +244,6 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h4 class="card-title">Detailed Sales Data</h4>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-info btn-sm" id="viewModeToggle">
-                                    <i class="fas fa-list"></i> Table View
-                                </button>
                                 <button class="btn btn-outline-success btn-sm" id="exportTableBtn">
                                     <i class="fas fa-file-excel"></i> Export Table
                                 </button>
@@ -302,15 +255,13 @@
                             <table class="table table-striped table-hover" id="salesTable">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
                                         <th>Order ID</th>
                                         <th>Customer</th>
                                         <th>Items</th>
-                                        <th>Category</th>
                                         <th>Payment Mode</th>
                                         <th>Amount</th>
                                         <th>Status</th>
-                                        <th>Actions</th>
+                                        <th>Date</th>
                                     </tr>
                                 </thead>
                                 <tbody id="salesTableBody"></tbody>
@@ -384,8 +335,16 @@
 /* keep your existing styles (unchanged) */
 .card-stats .numbers { position: relative; }
 /* ... other styles omitted for brevity; keep as before ... */
+/* Status badge coloring for completed orders (case-insensitive) */
+.status-badge[class*="complete"] {
+    background: #28a745 !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: bold;
+}
 </style>
 @endpush
+
 
 @push('scripts')
 <script>
@@ -422,15 +381,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setupEventListeners() {
-        document.getElementById('reportType').addEventListener('change', updateDateRange);
-        document.getElementById('generateReportBtn').addEventListener('click', generateReport);
         document.getElementById('exportBtn').addEventListener('click', () => new bootstrap.Modal(document.getElementById('exportModal')).show());
         document.getElementById('refreshBtn').addEventListener('click', refreshReport);
-
-        document.getElementById('dailyTrendBtn').addEventListener('click', () => updateTrendChart('daily'));
-        document.getElementById('weeklyTrendBtn').addEventListener('click', () => updateTrendChart('weekly'));
-        document.getElementById('monthlyTrendBtn').addEventListener('click', () => updateTrendChart('monthly'));
-
         document.getElementById('confirmExport').addEventListener('click', exportReport);
         document.getElementById('exportTableBtn')?.addEventListener('click', exportTable);
         document.getElementById('viewModeToggle')?.addEventListener('click', toggleViewMode);
@@ -526,36 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // set date inputs based on report type
-    function updateDateRange() {
-        const type = document.getElementById('reportType')?.value ?? 'monthly';
-        const fromEl = document.getElementById('fromDate');
-        const toEl = document.getElementById('toDate');
-        const today = new Date();
-        const fmt = d => d.toISOString().slice(0,10);
-
-        if (!fromEl || !toEl) return;
-        if (type === 'daily') {
-            fromEl.value = fmt(today);
-            toEl.value = fmt(today);
-        } else if (type === 'weekly') {
-            // last 7 days
-            const start = new Date();
-            start.setDate(today.getDate() - 6);
-            fromEl.value = fmt(start);
-            toEl.value = fmt(today);
-        } else if (type === 'monthly') {
-            const start = new Date(today.getFullYear(), today.getMonth(), 1);
-            fromEl.value = fmt(start);
-            toEl.value = fmt(today);
-        } else if (type === 'yearly') {
-            const start = new Date(today.getFullYear(), 0, 1);
-            fromEl.value = fmt(start);
-            toEl.value = fmt(today);
-        } else {
-            // custom - keep whatever user set
-        }
-    }
+    // Date range logic removed
 
     // improved loader with graceful handling
     async function safeFetchJson(url) {
@@ -585,25 +508,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setCategoryChart(categories) {
         // categories expected as { labels:[], data:[], colors:[] } or as data array
+        let labels = [], data = [], colors = [];
         if (Array.isArray(categories)) {
-            // convert
-            const labels = categories.map(c => c.name ?? c.label);
-            const data = categories.map(c => c.sales ?? c.value ?? 0);
+            labels = categories.map(c => c.name ?? c.label);
+            data = categories.map(c => c.count ?? c.sales ?? c.value ?? 0);
+            colors = categories.map(c => c.color ?? '#' + Math.floor(Math.random()*16777215).toString(16));
+        } else {
+            labels = categories.labels ?? [];
+            data = categories.data ?? [];
+            colors = categories.colors ?? [];
+        }
+        if (charts.category) {
             charts.category.data.labels = labels;
             charts.category.data.datasets[0].data = data;
-        } else {
-            charts.category.data.labels = categories.labels ?? [];
-            charts.category.data.datasets[0].data = categories.data ?? [];
-            charts.category.data.datasets[0].backgroundColor = categories.colors ?? charts.category.data.datasets[0].backgroundColor;
+            charts.category.data.datasets[0].backgroundColor = colors;
+            charts.category.update();
         }
-        charts.category.update();
         // update legend
         const legendEl = document.getElementById('categoryLegend');
-        legendEl.innerHTML = (categories.labels ?? []).map((label, i) => `
-            <div class="category-legend-item">
-                <div class="legend-color" style="background-color: ${categories.colors?.[i] ?? '#ccc'}"></div>
-                <span class="legend-text">${label}</span>
-                <span class="legend-value">${categories.data?.[i] ?? 0}%</span>
+        legendEl.innerHTML = labels.map((label, i) => `
+            <div class="category-legend-item d-flex align-items-center mb-1">
+                <div class="legend-color me-2" style="width:16px;height:16px;border-radius:3px;background-color: ${colors[i] ?? '#ccc'}"></div>
+                <span class="legend-text me-2">${label}</span>
+                <span class="legend-value text-muted">${data[i] ?? 0} products</span>
             </div>
         `).join('');
     }
@@ -625,19 +552,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setPaymentMethods(pm) {
-        // Accept payment_methods or paymentMethods
-        const data = pm.payment_methods ?? pm;
-        const labels = data.labels ?? [];
-        const values = data.data ?? [];
-        const colors = data.colors ?? [];
-        // update chart
-        charts.payment.data.labels = labels;
-        charts.payment.data.datasets[0].data = values;
-        charts.payment.update();
+        // Accept payment_methods or paymentMethods, handle missing data gracefully
+        const data = pm?.payment_methods ?? pm ?? {};
+        const labels = Array.isArray(data.labels) ? data.labels : [];
+        const values = Array.isArray(data.data) ? data.data : [];
+        const colors = Array.isArray(data.colors) ? data.colors : [];
+        // update chart only if chart exists
+        if (charts.payment) {
+            charts.payment.data.labels = labels;
+            charts.payment.data.datasets[0].data = values;
+            charts.payment.update();
+        }
         // update list / stats
         const container = document.getElementById('paymentStats');
+        if (!container) return;
         const total = (values || []).reduce((s, v) => s + (v || 0), 0) || 1;
-        const totalRevenue = (document.getElementById('totalRevenue').textContent || '$0').replace(/[^0-9.-]+/g,"") * 1 || 0;
+        const totalRevenue = (document.getElementById('totalRevenue')?.textContent || '$0').replace(/[^0-9.-]+/g,"") * 1 || 0;
         container.innerHTML = (labels || []).map((label, idx) => {
             const percent = total ? ((values[idx] / total) * 100).toFixed(1) : '0.0';
             const amount = totalRevenue ? (totalRevenue * (values[idx] / 100)).toFixed(2) : (data.amounts?.[idx] ?? 0);
@@ -652,33 +582,95 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setHourlyChart(hourly) {
+        if (!hourly) return; // Prevent error if hourly data is undefined
         const labels = hourly.labels ?? hourly.hourly_pattern?.labels ?? [];
         const data = hourly.data ?? hourly.orders ?? hourly.hourly_pattern?.orders ?? [];
-        charts.hourly.data.labels = labels;
-        charts.hourly.data.datasets[0].data = data;
-        charts.hourly.update();
+        if (charts.hourly) {
+            charts.hourly.data.labels = labels;
+            charts.hourly.data.datasets[0].data = data;
+            charts.hourly.update();
+        }
     }
+
+    // Add global exportTable to prevent ReferenceError
+    window.exportTable = function() {
+        // Get table rows
+        const table = document.getElementById('salesTable');
+        if (!table) return alert('Sales table not found!');
+        let rows = Array.from(table.querySelectorAll('tr'));
+        let data = rows.map(row => Array.from(row.querySelectorAll('th,td')).map(cell => cell.innerText));
+
+        // Get export format (default to Excel)
+        let format = 'excel';
+        const formatSelect = document.getElementById('exportFormat');
+        if (formatSelect) format = formatSelect.value;
+
+        // Convert data to CSV
+        function toCSV(data) {
+            return data.map(row => row.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',')).join('\r\n');
+        }
+
+        // Convert data to HTML table for Excel
+        function toExcel(data) {
+            let html = '<table><thead><tr>' + data[0].map(cell => `<th>${cell}</th>`).join('') + '</tr></thead><tbody>';
+            for (let i = 1; i < data.length; i++) {
+                html += '<tr>' + data[i].map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+            }
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Download file helper
+        function download(filename, content, mime) {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        }
+
+        if (format === 'csv') {
+            download('sales-table.csv', toCSV(data), 'text/csv');
+        } else if (format === 'pdf') {
+            // Simple PDF export using window.print (for table only)
+            const printWin = window.open('', '', 'width=900,height=600');
+            printWin.document.write('<html><head><title>Sales Table PDF</title></head><body>' + toExcel(data) + '</body></html>');
+            printWin.document.close();
+            printWin.focus();
+            printWin.print();
+        } else {
+            // Excel export (as HTML table)
+            const excelHtml = `\uFEFF<html><head><meta charset='UTF-8'></head><body>${toExcel(data)}</body></html>`;
+            download('sales-table.xls', excelHtml, 'application/vnd.ms-excel');
+        }
+    };
+    window.toggleViewMode = function() { /* No-op for toggleViewMode */ };
 
     function setSalesTable(salesPayload) {
         const rows = Array.isArray(salesPayload) ? salesPayload : (salesPayload.data ?? salesPayload);
         const tbody = document.getElementById('salesTableBody');
         tbody.innerHTML = (rows || []).map(sale => {
             const payment = sale.payment_mode ?? sale.payment_method ?? sale.paymentMethod ?? 'Unknown';
-            const items = (sale.items ?? sale.items_list ?? sale.items_text) || '';
+            let itemsArr = Array.isArray(sale.items) ? sale.items : [];
+            const itemsText = itemsArr.length
+                ? itemsArr.map(it => `${it.name} (${it.qty}x ₱${Number(it.price).toFixed(2)})`).join(', ')
+                : '';
             const date = sale.date ?? sale.created_at ?? '';
+            // Inline style for green badge if status is complete/completed
+            const statusText = (sale.status ?? '').toLowerCase();
+            const isComplete = statusText.includes('complete');
+            const statusStyle = isComplete ? 'background:#28a745;color:#fff;border:none;font-weight:bold;' : '';
             return `<tr>
-                <td>${new Date(date).toLocaleString()}</td>
                 <td><strong>${sale.order_id ?? sale.order_number ?? ('ORD-' + (sale.id || ''))}</strong></td>
                 <td>${sale.customer ?? sale.customer_name ?? ''}</td>
-                <td><div style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${items}">${items}</div></td>
-                <td>${sale.category ?? ''}</td>
+                <td><div style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${itemsText}">${itemsText}</div></td>
                 <td>${payment}</td>
-                <td><strong>$${Number(sale.amount ?? sale.total ?? 0).toFixed(2)}</strong></td>
-                <td><span class="badge status-badge status-${(sale.status ?? '').toLowerCase()}">${(sale.status ?? 'N/A').toUpperCase()}</span></td>
-                <td>
-                    <button class="btn btn-outline-primary btn-action" onclick="viewOrderDetails(${sale.id ?? 0})" title="View Details"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-outline-info btn-action" onclick="printReceipt(${sale.id ?? 0})" title="Print Receipt"><i class="fas fa-print"></i></button>
-                </td>
+                <td><strong>₱${Number(sale.amount ?? sale.total ?? 0).toFixed(2)}</strong></td>
+                <td><span class="badge status-badge status-${statusText}" style="${statusStyle}">${(sale.status ?? 'N/A').toUpperCase()}</span></td>
+                <td>${new Date(date).toLocaleString()}</td>
             </tr>`;
         }).join('');
         // update pagination numbers if available
@@ -867,93 +859,75 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 700);
     }
 
-    function exportReport() { alert('Exporting (not implemented)'); const modal = bootstrap.Modal.getInstance(document.getElementById('exportModal')); modal.hide(); }
-    function exportTable() { alert('Export table not implemented'); }
-    function toggleViewMode() {
-        const button = document.getElementById('viewModeToggle');
-        const icon = button.querySelector('i');
-        if (icon.classList.contains('fa-list')) { icon.classList.replace('fa-list','fa-th'); button.innerHTML = '<i class="fas fa-th"></i> Card View'; } 
-        else { icon.classList.replace('fa-th','fa-list'); button.innerHTML = '<i class="fas fa-list"></i> Table View'; }
-    }
+    async function exportReport() {
+        const format = document.getElementById('exportFormat').value;
+        const includeSummary = document.getElementById('includeSummary').checked;
+        const includeCharts = document.getElementById('includeCharts').checked;
+        const includeDetails = document.getElementById('includeDetails').checked;
+        const emailTo = document.getElementById('emailTo').value;
 
-    function showLoadingState() {
-        if (document.getElementById('reportLoading')) return;
-        document.body.insertAdjacentHTML('beforeend', `<div id="reportLoading" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style="background: rgba(255,255,255,0.8); z-index: 9999;">
-            <div class="text-center">
-                <div class="loading-spinner"></div>
-                <h5>Generating Report...</h5>
-            </div>
-        </div>`);
-    }
-    function hideLoadingState() { document.getElementById('reportLoading')?.remove(); }
+        // Build request payload
+        async function loadAllData() {
+            try {
+                // fetch in parallel using safeFetchJson (no date filters)
+                const [
+                    summaryJson,
+                    trendJson,
+                    categoriesJson,
+                    topJson,
+                    paymentJson,
+                    hourlyJson,
+                    salesDataJson
+                ] = await Promise.all([
+                    safeFetchJson(routes.summary),
+                    safeFetchJson(routes.trend + '?period=monthly'),
+                    safeFetchJson(routes.categories),
+                    safeFetchJson(routes.topProducts + '?limit=10'),
+                    safeFetchJson(routes.paymentMethods),
+                    safeFetchJson(routes.hourly),
+                    safeFetchJson(routes.salesData + `?page=${currentPage}&per_page=${recordsPerPage}`)
+                ]);
 
-    // expose a couple helper functions for buttons
-    window.changePage = function(page) { currentPage = page; loadAllData(); };
-    window.viewOrderDetails = function(orderId) { if (!orderId) return alert('No order id'); fetch("{{ url('sales/orders') }}/" + orderId + "/details").then(r=>r.json()).then(d=>alert(JSON.stringify(d.order, null, 2))); };
+                if (summaryJson) {
+                    const payload = summaryJson.summary ?? summaryJson;
+                    setSummary(payload);
+                } else {
+                    console.warn('Summary API returned null or 404. Check route:', routes.summary);
+                }
+
+                if (trendJson) {
+                    updateTrendChartDataFromApi(trendJson.trend ?? trendJson);
+                }
+
+                if (categoriesJson) {
+                    setCategoryChart(categoriesJson.categories ?? (categoriesJson.data ?? categoriesJson));
+                }
+
+                if (topJson) {
+                    setTopProducts(topJson.products ?? topJson.data ?? topJson);
+                }
+
+                if (paymentJson) {
+                    setPaymentMethods(paymentJson.payment_methods ?? paymentJson);
+                }
+
+                if (hourlyJson) {
+                    setHourlyChart(hourlyJson.hourly_pattern ?? hourlyJson);
+                }
+
+                if (salesDataJson) {
+                    setSalesTable(salesDataJson.data ?? salesDataJson);
+                }
+            } catch (err) {
+                console.error('Error loading report data', err);
+            }
+        }
+        fetch("{{ url('sales/orders') }}/" + orderId + "/details")
+            .then(r => r.json())
+            .then(d => alert(JSON.stringify(d.order, null, 2)));
+    };
     window.printReceipt = function(orderId) { fetch("{{ url('sales') }}/orders/" + orderId + "/print", { method:'POST', headers:{'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')} }).then(r=>r.json()).then(j=>alert(j.message)); };
 });
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    async function fetchSummary(from, to) {
-        const q = new URLSearchParams();
-        if (from) q.set('from', from);
-        if (to) q.set('to', to);
-        const res = await fetch(`/sales/api/summary?${q.toString()}`, { headers: { 'Accept': 'application/json' }});
-        if (!res.ok) return null;
-        return await res.json();
-    }
-
-    async function fetchTopProducts(from, to, limit=5) {
-        const q = new URLSearchParams();
-        if (from) q.set('from', from);
-        if (to) q.set('to', to);
-        if (limit) q.set('limit', limit);
-        const res = await fetch(`/sales/api/top-products?${q.toString()}`, { headers: { 'Accept': 'application/json' }});
-        if (!res.ok) return null;
-        return await res.json();
-    }
-
-    async function refreshReportData() {
-        // use the date inputs on the page, if present
-        const from = document.getElementById('fromDate')?.value || null;
-        const to = document.getElementById('toDate')?.value || null;
-
-        const sumResp = await fetchSummary(from, to);
-        if (sumResp && sumResp.success) {
-            document.getElementById('totalRevenue').textContent = `$${sumResp.summary.total_revenue.toLocaleString()}`;
-            document.getElementById('totalOrders').textContent = sumResp.summary.total_orders.toLocaleString();
-            document.getElementById('averageOrder').textContent = `$${sumResp.summary.average_order}`;
-        }
-
-        const topResp = await fetchTopProducts(from, to, 5);
-        if (topResp && topResp.success) {
-            const container = document.getElementById('topProductsList');
-            container.innerHTML = topResp.products.map((p, i) => `
-                <div class="product-item">
-                    <div class="product-info">
-                        <div class="product-name">${i+1}. ${p.name}</div>
-                        <div class="product-category">—</div>
-                    </div>
-                    <div class="product-stats">
-                        <div class="product-sales">$${Number(p.total_sales).toFixed(2)}</div>
-                        <div class="product-quantity">${p.total_qty} sold</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    }
-
-    // run on load
-    refreshReportData();
-
-    // bind to generate/refresh buttons if present
-    document.getElementById('generateReportBtn')?.addEventListener('click', function () {
-        refreshReportData();
-    });
-    document.getElementById('refreshBtn')?.addEventListener('click', function () {
-        refreshReportData();
-    });
-});
-</script>
+<!-- Removed legacy script block referencing /sales/api/summary and /sales/api/top-products endpoints -->
 @endpush

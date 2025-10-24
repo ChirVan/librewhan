@@ -168,24 +168,36 @@ class SalesReportController extends Controller
      */
     public function getCategoryPerformance(Request $request)
     {
-        [$from, $to] = $this->resolveRange($request);
 
-        $rows = DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->whereBetween('orders.created_at', [$from, $to])
-            ->groupBy('categories.id', 'categories.name')
-            ->selectRaw('categories.name as category, COALESCE(SUM(order_items.qty * order_items.price),0) as revenue, COUNT(DISTINCT orders.id) as orders_count')
-            ->orderByDesc('revenue')
-            ->get();
+        // Get all categories with color and product count
+        $categories = \App\Models\Category::withCount('products')->get();
+
+        $labels = [];
+        $data = [];
+        $colors = [];
+        // Use a color palette for fallback
+        $palette = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#8DD17E', '#F6C85F', '#D7B5E6',
+            '#CA6F6F', '#6FCA9A', '#6F8BCA', '#CA6FBA', '#BACA6F', '#6FCA8B', '#CA8B6F', '#8B6FCA', '#6FBACA', '#CA6FB5'
+        ];
+        $paletteIndex = 0;
+        foreach ($categories as $cat) {
+            $labels[] = $cat->name;
+            $data[] = $cat->products_count;
+            if (!empty($cat->color)) {
+                $colors[] = $cat->color;
+            } else {
+                $colors[] = $palette[$paletteIndex % count($palette)];
+                $paletteIndex++;
+            }
+        }
 
         return response()->json([
             'success' => true,
             'categories' => [
-                'labels' => $rows->pluck('category')->all(),
-                'data' => $rows->pluck('revenue')->map(fn($v) => (float)$v)->all(),
-                'orders' => $rows->pluck('orders_count')->map(fn($v) => (int)$v)->all(),
+                'labels' => $labels,
+                'data' => $data,
+                'colors' => $colors,
             ]
         ]);
     }
@@ -307,8 +319,8 @@ class SalesReportController extends Controller
             'payment_mode' => 'nullable|string'
         ]);
 
-        $perPage = (int) ($request->per_page ?? 10);
-        $q = Order::with(['items', 'user'])->orderByDesc('created_at');
+    $perPage = (int) ($request->per_page ?? 10);
+    $q = Order::with(['items.product.category', 'user'])->orderByDesc('created_at');
 
         if ($request->filled('payment_mode')) {
             $q->where('payment_mode', $request->payment_mode);
@@ -336,7 +348,10 @@ class SalesReportController extends Controller
             'items' => $o->items->map(fn($it) => [
                 'name' => $it->name,
                 'qty' => $it->qty,
-                'price' => (float) $it->price
+                'price' => (float) $it->price,
+                'category' => $it->product && $it->product->category ? [
+                    'name' => $it->product->category->name
+                ] : null
             ])
         ]);
 

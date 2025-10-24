@@ -44,9 +44,9 @@
                                 <div class="form-group mb-0">
                                     <label class="form-label small">Date Range</label>
                                     <select class="form-control form-control-sm" id="dateFilter">
-                                        <option value="today">Today</option>
+                                        <option value="today" selected>Today</option>
                                         <option value="yesterday">Yesterday</option>
-                                        <option value="this-week" selected>This Week</option>
+                                        <option value="this-week">This Week</option>
                                         <option value="last-week">Last Week</option>
                                         <option value="this-month">This Month</option>
                                         <option value="last-month">Last Month</option>
@@ -346,6 +346,164 @@
 </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Export table as Excel
+    document.getElementById('exportData').addEventListener('click', function() {
+        const table = document.getElementById('ordersTable');
+        if (!table) return alert('Orders table not found!');
+        let rows = Array.from(table.querySelectorAll('thead tr, tbody tr'));
+        let data = rows.map(row => Array.from(row.querySelectorAll('th,td')).map(cell => cell.innerText));
+        // Convert to HTML table for Excel
+        function toExcel(data) {
+            let html = '<table><thead><tr>' + data[0].map(cell => `<th>${cell}</th>`).join('') + '</tr></thead><tbody>';
+            for (let i = 1; i < data.length; i++) {
+                html += '<tr>' + data[i].map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+            }
+            html += '</tbody></table>';
+            return html;
+        }
+        // Download helper
+        function download(filename, content, mime) {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        }
+        const excelHtml = `\uFEFF<html><head><meta charset='UTF-8'></head><body>${toExcel(data)}</body></html>`;
+        download('order-history.xls', excelHtml, 'application/vnd.ms-excel');
+    });
+    const searchInput = document.getElementById('searchInput');
+    const dateFilter = document.getElementById('dateFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const sortFilter = document.getElementById('sortFilter');
+    const applyBtn = document.getElementById('applyFilters');
+    const resetBtn = document.getElementById('resetFilters');
+    const ordersTableBody = document.getElementById('ordersTableBody');
+    const perPageSelect = document.getElementById('perPage');
+    let allRows = Array.from(ordersTableBody.querySelectorAll('tr')).map(row => row.cloneNode(true));
+
+    function getOrderData(row) {
+        // Extract order data from hidden div
+        const dataDiv = row.querySelector('div[id^="order-data-"]');
+        if (!dataDiv) return {};
+        try { return JSON.parse(dataDiv.textContent); } catch { return {}; }
+    }
+
+    function filterRows() {
+        let filtered = allRows.slice();
+        // Search
+        const searchVal = searchInput.value.trim().toLowerCase();
+        if (searchVal) {
+            filtered = filtered.filter(row => {
+                const order = getOrderData(row);
+                return (
+                    (order.order_number && order.order_number.toString().toLowerCase().includes(searchVal)) ||
+                    (order.customer_name && order.customer_name.toLowerCase().includes(searchVal))
+                );
+            });
+        }
+        // Type
+        const typeVal = typeFilter.value;
+        if (typeVal !== 'all') {
+            filtered = filtered.filter(row => {
+                const order = getOrderData(row);
+                return order.order_type === typeVal;
+            });
+        }
+        // Date (simple filter: today, yesterday, week, month)
+        const dateVal = dateFilter.value;
+        if (dateVal !== 'custom') {
+            const now = new Date();
+            filtered = filtered.filter(row => {
+                const order = getOrderData(row);
+                if (!order.created_at) return true;
+                const orderDate = new Date(order.created_at);
+                if (dateVal === 'today') {
+                    return orderDate.toDateString() === now.toDateString();
+                } else if (dateVal === 'yesterday') {
+                    const yest = new Date(now); yest.setDate(now.getDate()-1);
+                    return orderDate.toDateString() === yest.toDateString();
+                } else if (dateVal === 'this-week') {
+                    const weekStart = new Date(now); weekStart.setDate(now.getDate()-now.getDay());
+                    return orderDate >= weekStart && orderDate <= now;
+                } else if (dateVal === 'last-week') {
+                    const weekStart = new Date(now); weekStart.setDate(now.getDate()-now.getDay()-7);
+                    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+                    return orderDate >= weekStart && orderDate <= weekEnd;
+                } else if (dateVal === 'this-month') {
+                    return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+                } else if (dateVal === 'last-month') {
+                    const lastMonth = new Date(now); lastMonth.setMonth(now.getMonth()-1);
+                    return orderDate.getMonth() === lastMonth.getMonth() && orderDate.getFullYear() === lastMonth.getFullYear();
+                }
+                return true;
+            });
+        } else {
+            // Custom range
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            if (from && to) {
+                const fromDate = new Date(from);
+                const toDate = new Date(to);
+                filtered = filtered.filter(row => {
+                    const order = getOrderData(row);
+                    if (!order.created_at) return true;
+                    const orderDate = new Date(order.created_at);
+                    return orderDate >= fromDate && orderDate <= toDate;
+                });
+            }
+        }
+        // Sort
+        const sortVal = sortFilter.value;
+        filtered.sort((a, b) => {
+            const orderA = getOrderData(a);
+            const orderB = getOrderData(b);
+            if (sortVal === 'newest') {
+                return new Date(orderB.created_at) - new Date(orderA.created_at);
+            } else if (sortVal === 'oldest') {
+                return new Date(orderA.created_at) - new Date(orderB.created_at);
+            } else if (sortVal === 'highest') {
+                return (orderB.total || 0) - (orderA.total || 0);
+            } else if (sortVal === 'lowest') {
+                return (orderA.total || 0) - (orderB.total || 0);
+            }
+            return 0;
+        });
+        // Pagination
+        const perPage = parseInt(perPageSelect.value, 10) || 25;
+        let page = 1;
+        // TODO: Add page navigation if needed
+        const paged = filtered.slice((page-1)*perPage, page*perPage);
+        ordersTableBody.innerHTML = '';
+        paged.forEach(row => ordersTableBody.appendChild(row.cloneNode(true)));
+        // Update order count badge
+        const orderCount = document.getElementById('orderCount');
+        if (orderCount) orderCount.textContent = `Showing ${paged.length} of ${filtered.length} orders`;
+    }
+
+    applyBtn.addEventListener('click', filterRows);
+    resetBtn.addEventListener('click', function() {
+        searchInput.value = '';
+    dateFilter.value = 'today';
+        typeFilter.value = 'all';
+        sortFilter.value = 'newest';
+        perPageSelect.value = '25';
+        document.getElementById('fromDate').value = '';
+        document.getElementById('toDate').value = '';
+        filterRows();
+    });
+    searchInput.addEventListener('keyup', function(e) { if (e.key === 'Enter') filterRows(); });
+    dateFilter.addEventListener('change', function() {
+        document.getElementById('customDateRange').style.display = (dateFilter.value === 'custom') ? '' : 'none';
+    });
+    perPageSelect.addEventListener('change', filterRows);
+    // Initial filter
+    filterRows();
+});
 function showReceiptModal(orderId) {
     // Find order data from Blade (rendered in table row)
     // We'll use a hidden div to store JSON for each order

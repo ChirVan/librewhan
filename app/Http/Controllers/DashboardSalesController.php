@@ -37,23 +37,18 @@ class DashboardSalesController extends Controller
             Log::warning('Failed to query orders statuses: ' . $e->getMessage());
         }
 
-        // Build aggregation query (GROUP BY p.id,p.name is REQUIRED)
-        $agg = DB::table('products as p')
-        ->leftJoin('order_items as oi', 'oi.product_id', '=', 'p.id')
-        ->leftJoin('orders as o', function($join) use ($from) {
-            $join->on('o.id', '=', 'oi.order_id')
-                ->where('o.status', '=', 'completed')
-                ->where('o.created_at', '>=', $from);
-        })
-        ->select(
-            'p.id as product_id',
-            'p.name',
-            DB::raw('COALESCE(SUM(oi.qty),0) as total_qty'),
-            DB::raw('COALESCE(SUM(oi.qty * oi.price),0) as total_revenue')
-        )
-        ->groupBy('p.id', 'p.name');
+        // Aggregate by order_items.name instead of product_id
+        $agg = DB::table('order_items as oi')
+            ->join('orders as o', 'oi.order_id', '=', 'o.id')
+            ->where('o.status', '=', 'completed')
+            ->where('o.created_at', '>=', $from)
+            ->select(
+                'oi.name',
+                DB::raw('SUM(oi.qty) as total_qty'),
+                DB::raw('SUM(oi.qty * oi.price) as total_revenue')
+            )
+            ->groupBy('oi.name');
 
-        // run and log results
         $top = (clone $agg)
             ->orderByDesc($metric === 'revenue' ? 'total_revenue' : 'total_qty')
             ->limit($limit)

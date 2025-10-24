@@ -96,9 +96,10 @@ class OrderController extends Controller
                 $product->current_stock = max(0, $product->current_stock - $qty);
                 $product->save();
 
-                // create order item
+                // create order item (ensure product_id is set)
                 OrderItem::create([
                     'order_id' => $order->id,
+                    'product_id' => $productId,
                     'name' => $it['name'],
                     'size' => $it['size'] ?? null,
                     'toppings' => isset($it['toppings']) ? (is_array($it['toppings']) ? implode(',', $it['toppings']) : $it['toppings']) : null,
