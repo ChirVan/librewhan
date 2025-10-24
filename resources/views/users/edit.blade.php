@@ -22,7 +22,6 @@
                     <select name="usertype" class="form-control">
                         <option value="barista" {{ $user->usertype==='barista' ? 'selected' : '' }}>Barista</option>
                         <option value="admin" {{ $user->usertype==='admin' ? 'selected' : '' }}>Owner/Admin</option>
-                        <option value="owner" {{ $user->usertype==='owner' ? 'selected' : '' }}>Owner</option>
                     </select>
                 </div>
                 <button class="btn btn-primary">Save</button>

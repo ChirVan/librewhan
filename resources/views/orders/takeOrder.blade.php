@@ -160,7 +160,7 @@
                     <div class="col-12" id="toppingsOptions" style="display:none"></div>
 
                     <!-- Sugar & Ice Level (kept static as requested) -->
-                    <div class="col-6" id="sugarOptions">
+                    {{-- <div class="col-6" id="sugarOptions">
                         <label class="form-label fw-bold mb-1 small">Sugar</label>
                         <select class="form-control form-control-sm" name="sugar">
                             <option value="no-sugar">No Sugar</option>
@@ -179,7 +179,7 @@
                             <option value="normal-ice" selected>Normal</option>
                             <option value="extra-ice">Extra</option>
                         </select>
-                    </div>
+                    </div> --}}
 
                     <!-- Special Instructions (notes are required as requested) -->
                     <div class="col-12">
@@ -718,8 +718,8 @@
 
     const toppings = Array.from(document.querySelectorAll('input.topping-choice:checked')).map(cb => cb.value);
 
-    const sugarSel = document.querySelector('select[name="sugar"]');
-    const iceSel = document.querySelector('select[name="ice"]');
+    // const sugarSel = document.querySelector('select[name="sugar"]');
+    // const iceSel = document.querySelector('select[name="ice"]');
     const instructions = document.querySelector('textarea[name="instructions"]')?.value ?? '';
 
     // qty control: for now, 1 (consistent with previous)
@@ -732,8 +732,8 @@
       size: sizeLabel,
       size_key: sizeKey,
       toppings,
-      sugar: sugarSel ? sugarSel.value : null,
-      ice: iceSel ? iceSel.value : null,
+      // sugar: sugarSel ? sugarSel.value : null,
+      // ice: iceSel ? iceSel.value : null,
       milk: milkKey,
       instructions,
       price: Number(price),
