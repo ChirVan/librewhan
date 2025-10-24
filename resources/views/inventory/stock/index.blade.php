@@ -169,8 +169,19 @@
                                                                 </select>
                                                             </div>
                                                             <div class="mb-3">
-                                                                <label for="reason{{ $product->id }}" class="form-label">Reason</label>
-                                                                <input type="text" class="form-control" name="reason" id="reason{{ $product->id }}" maxlength="255">
+                                                                <label for="reason{{ $product->id }}" class="form-label">Reason <span class="text-danger">*</span></label>
+                                                                <input
+                                                                type="text"
+                                                                class="form-control"
+                                                                name="reason"
+                                                                id="reason{{ $product->id }}"
+                                                                maxlength="255"
+                                                                required
+                                                                placeholder="Why are you updating the stock?"
+                                                                >
+                                                                <div class="invalid-feedback">
+                                                                Please provide a reason for this stock adjustment.
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div class="modal-footer">

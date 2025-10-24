@@ -256,6 +256,27 @@
         order: 1; /* Move products below cart */
     }
 }
+
+#products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 0 8px;
+}
+
+@media (max-width: 767.98px) {
+    #products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 8px;
+    }
+}
+
+@media (max-width: 400px) {
+    #products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 6px;
+    }
+}
 </style>
 
 <!-- SMS JavaScript - dynamic renderer version -->
@@ -478,7 +499,8 @@
 
     filtered.forEach(product => {
       const col = document.createElement('div');
-      col.className = 'col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 product-item';
+      // col.className = 'col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6 mb-3 product-item';
+      col.className = 'product-item';
 
       const priceText = product.size_choices && product.size_choices.length
         ? `From ₱${currency(product.display_price)}`
