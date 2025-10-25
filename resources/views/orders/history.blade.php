@@ -150,7 +150,7 @@
                                                         'id' => $order->id,
                                                         'order_number' => $order->order_number,
                                                         'customer_name' => $order->customer_name,
-                                                        'created_at' => $order->created_at->format('Y-m-d H:i'),
+                                                        'created_at' => $order->created_at->setTimezone('Asia/Manila')->format('Y-m-d H:i'),
                                                         'order_type' => $order->order_type,
                                                         'total' => $order->total,
                                                         'items' => $order->items->map(function($item) {
@@ -164,8 +164,8 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <div>{{ $order->created_at->format('Y-m-d') }}</div>
-                                                <small class="text-muted">{{ $order->created_at->format('H:i') }}</small>
+                                                <div>{{ $order->created_at->setTimezone('Asia/Manila')->format('Y-m-d') }}</div>
+                                                <small class="text-muted">{{ $order->created_at->setTimezone('Asia/Manila')->format('H:i') }}</small>
                                             </td>
                                             <td>{{ $order->customer_name }}</td>
                                             <td>
@@ -414,14 +414,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 return order.order_type === typeVal;
             });
         }
-        // Date (simple filter: today, yesterday, week, month)
+        // Date (simple filter: today, yesterday, week, month) - Manila timezone
         const dateVal = dateFilter.value;
+        const tz = 'Asia/Manila';
+        function getManilaDate(dateStr) {
+            // Parse date string as Manila time
+            return new Date(new Date(dateStr).toLocaleString('en-US', { timeZone: tz }));
+        }
         if (dateVal !== 'custom') {
-            const now = new Date();
+            const now = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
             filtered = filtered.filter(row => {
                 const order = getOrderData(row);
                 if (!order.created_at) return true;
-                const orderDate = new Date(order.created_at);
+                const orderDate = getManilaDate(order.created_at);
                 if (dateVal === 'today') {
                     return orderDate.toDateString() === now.toDateString();
                 } else if (dateVal === 'yesterday') {
@@ -447,12 +452,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const from = document.getElementById('fromDate').value;
             const to = document.getElementById('toDate').value;
             if (from && to) {
-                const fromDate = new Date(from);
-                const toDate = new Date(to);
+                const fromDate = new Date(new Date(from).toLocaleString('en-US', { timeZone: tz }));
+                const toDate = new Date(new Date(to).toLocaleString('en-US', { timeZone: tz }));
                 filtered = filtered.filter(row => {
                     const order = getOrderData(row);
                     if (!order.created_at) return true;
-                    const orderDate = new Date(order.created_at);
+                    const orderDate = getManilaDate(order.created_at);
                     return orderDate >= fromDate && orderDate <= toDate;
                 });
             }
