@@ -70,10 +70,10 @@
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">Stock List</h4>
-                    <div>
+                    {{-- <div>
                         <a href="{{ route('inventory.stock.alerts') }}" class="btn btn-warning btn-sm">Stock Alerts</a>
                         <a href="{{ route('inventory.stock.history') }}" class="btn btn-outline-secondary btn-sm">Stock History</a>
-                    </div>
+                    </div> --}}
                 </div>
                 <div class="card-body py-3">
                     <form method="GET" class="row g-3 align-items-end mb-3">

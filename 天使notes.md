@@ -237,7 +237,7 @@ Run these commands from the droplet (replace main with your branch if needed). T
 # 0. variables (edit if different)
 APP_DIR="/var/www/librewhan"
 GIT_BRANCH="main"
-WEB_USER="www-data"   # leave as www-data unless you want atesh to own the files
+WEB_USER="www-data"
 REMOTE="origin"
 
 # 1. go to app
